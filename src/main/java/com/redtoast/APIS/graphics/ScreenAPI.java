@@ -27,10 +27,4 @@ public class ScreenAPI extends DrawableGraphicalAPI implements API {
         super.draw();
         computer.renderColorGraphics();
     }
-
-    @Exposed
-    public Table createLayer(int sizex, int sizey){
-        if (sizex<=0 || sizey<=0) throw new ExposedError("Size cant be zero or less");
-        return APILoader.TableizeAPI(new GraphicalAPI(sizex, sizey, computer.getRuntime()), computer.getRuntime());
-    }
 }

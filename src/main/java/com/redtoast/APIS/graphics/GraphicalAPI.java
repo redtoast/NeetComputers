@@ -42,20 +42,34 @@ public class GraphicalAPI implements Exposable {
         return output | ((RGBA & 0xFF) * A + (RGB & 0xFF) * (255-A)) / 255 & 0xFF;
     }
 
+    public static int pack(int red, int green, int blue, int alpha) {
+        return (red & 0xFF << 24) | (green & 0xFF << 16) | (blue & 0xFF << 8) | (alpha & 0xFF);
+    }
+
     @Exposed
     public Tuple getSize() {
         return new Tuple(width, height);
     }
 
     @Exposed
-    public void drawPixel(int x, int y, int RGBA) {
+    public void writePixel(int x, int y, int red, int green, int blue, @CanBeNull Integer alpha) {
         if (0 > x || x >= width || 0 > y || y >= height) return;
+        int RGBA = pack(red, green, blue, alpha == null ? 255 : alpha);
         if ((RGBA & 0x000000FF) == 255) buffer[x + y * width] = RGBA >> 8;
         buffer[x + y * width] = blend(buffer[x + y * width], RGBA);
     }
 
     @Exposed
-    public void drawLine(int x1, int y1, int x2, int y2, int RGBA) {
+    public Tuple readPixel(int x, int y) {
+        if (0 > x || x >= width) throw new RangeArgumentError(0, 0, width-1, x);
+        if (0 > y || y >= height) throw new RangeArgumentError(1, 0, height-1, y);
+        int RGB = buffer[x + y * width];
+        return new Tuple(RGB & 0xFF0000 >> 16, RGB & 0xFF00 >> 8, RGB & 0xFF);
+    }
+
+    @Exposed
+    public void writeLine(int x1, int y1, int x2, int y2, int red, int green, int blue, @CanBeNull Integer alpha) {
+        int RGBA = pack(red, green, blue, alpha == null ? 255 : alpha);
         int dx = Math.abs(x2 - x1);
         int dy = Math.abs(y2 - y1);
         int sx = x1 < x2 ? 1 : -1;
@@ -63,7 +77,7 @@ public class GraphicalAPI implements Exposable {
         int err = dx - dy;
 
         while (true) {
-            drawPixel(x1, y2, RGBA);
+            writePixel(x1, y2, red, green, blue, alpha);
 
             if (x1 == x2 && y1 == y2)
                 break;
@@ -81,10 +95,10 @@ public class GraphicalAPI implements Exposable {
     }
 
     @Exposed
-    public void substitute(int src, int dest) {
-        final int flatSrc = src & 0xFFFFFF;
-        final int flatDest = dest & 0xFFFFFF;
-        buffer = Arrays.stream(buffer).map((check) -> check == flatSrc ? flatDest : check).toArray();
+    public void substitute(int red1, int green1, int blue1, int red2, int green2, int blue2) {
+        int src = pack(red1, green1, blue1, 0) >> 8;
+        int dest = pack(red2, green2, blue2, 0) >> 8;
+        buffer = Arrays.stream(buffer).map((check) -> check == src ? dest : check).toArray();
     }
 
     public int[] readSector(int x1, int y1, int x2, int y2) {
@@ -161,8 +175,14 @@ public class GraphicalAPI implements Exposable {
     }
 
     @Exposed
-    public void set(@CanBeNull Integer RGBA) {
-        if (RGBA==null || RGBA==0xFF) {
+    public void set() {
+        buffer = new int[width * height];
+    }
+
+    @Exposed
+    public void set(int red, int green, int blue, @CanBeNull Integer alpha) {
+        int RGBA = pack(red, green, blue, alpha == null ? 255 : alpha);
+        if (RGBA==0xFF) {
             buffer = new int[width * height];
             return;
         }
@@ -172,7 +192,7 @@ public class GraphicalAPI implements Exposable {
     }
 
     @Exposed
-    public void fill(int x1, int y1, int x2, int y2, int RGBA) {
+    public void fill(int x1, int y1, int x2, int y2, int red, int green, int blue, @CanBeNull Integer alpha) {
         /* clean params*/
         if (x1 > x2) throw new ExposedError("x2 must be larger then x1");
         if (y1 > y2) throw new ExposedError("y2 must be larger then y1");
@@ -180,6 +200,7 @@ public class GraphicalAPI implements Exposable {
         if (y1 < 0) throw new RangeArgumentError(1, 0, height - 1, y1);
         if (x2 >= width) throw new RangeArgumentError(2, 0, width - 1, x2);
         if (y2 >= height) throw new RangeArgumentError(3, 0, height - 1, y2);
+        int RGBA = pack(red, green, blue, alpha == null ? 255 : alpha);
         int width = x2 - x1 + 1;
         if ((RGBA & 0xFF) == 0xFF) {
             /*Create a row and copy it into the buffer*/
@@ -197,5 +218,11 @@ public class GraphicalAPI implements Exposable {
                 System.arraycopy(mapped, i * width, buffer, (y1 + i) * this.width + x1, width);
             }
         }
+    }
+
+    @Exposed
+    public Table createLayer(int sizex, int sizey){
+        if (sizex<=0 || sizey<=0) throw new ExposedError("Size cant be zero or less");
+        return APILoader.TableizeAPI(new GraphicalAPI(sizex, sizey, runtime), runtime);
     }
 }
