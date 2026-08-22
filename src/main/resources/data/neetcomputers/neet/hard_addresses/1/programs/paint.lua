@@ -11,14 +11,11 @@ local colorIndex = 1
 
 local sw, sh = screen.getSize()
 
-local function setDrawColor()
-    local r, g, b = Colors.rgb(PALETTE[colorIndex])
-    screen.setColor(r, g, b)
+local function drawColor()
+    return Colors.rgba(PALETTE[colorIndex])
 end
 
-screen.setColor(17, 17, 17)
-screen.fill(0, 0, sw - 1, sh - 1)
-setDrawColor()
+screen.fill(0, 0, sw - 1, sh - 1, Colors.rgba("black"))
 screen.draw()
 
 local running = true
@@ -30,8 +27,7 @@ while running do
         local kind = e[1]
         if kind == "mouseClicked" or kind == "mouseDragged" then
             local x, y = e[2], e[3]
-            setDrawColor()
-            screen.fill(x - 1, y - 1, x + 1, y + 1)
+            screen.fill(x - 1, y - 1, x + 1, y + 1, drawColor())
             redraw = true
         elseif kind == "keyPressed" then
             local code, letter = e[2], e[3]
@@ -39,8 +35,7 @@ while running do
             if upperLetter == "ESCAPE" or code == 27 or code == string.byte("q") or code == string.byte("Q") then
                 running = false
             elseif code == string.byte("c") or code == string.byte("C") then
-                screen.setColor(17, 17, 17)
-                screen.fill(0, 0, sw - 1, sh - 1)
+                screen.fill(0, 0, sw - 1, sh - 1, Colors.rgba("black"))
                 redraw = true
             elseif code and code >= string.byte("1") and code <= string.byte(tostring(#PALETTE)) then
                 colorIndex = code - string.byte("0")

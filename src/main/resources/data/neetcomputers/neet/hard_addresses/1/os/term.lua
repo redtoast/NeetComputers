@@ -263,10 +263,9 @@ function Term:redraw()
         local py = (y - 1) * self.charH
         for x in pairs(row) do
             local cell = bufRow[x]
-            local bgr, bgg, bgb = Colors.rgb(cell.bg)
-            screen.setColor(bgr, bgg, bgb)
             screen.fill((x - 1) * self.charW, py,
-                        x * self.charW - 1, py + self.charH - 1)
+                        x * self.charW - 1, py + self.charH - 1,
+                        Colors.rgba(cell.bg))
             if cell.ch ~= " " then
                 local fr, fg, fb = Colors.rgb(cell.fg)
                 self.font:print((x - 1) * self.charW + 1, py + 1, cell.ch, fr, fg, fb)
@@ -276,11 +275,10 @@ function Term:redraw()
     self.dirty = {}
 
     if self.blinkOn and self.blinkVisible then
-        local r, g, b = Colors.rgb(self.fg)
         local px = (self.cx - 1) * self.charW
         local py = (self.cy - 1) * self.charH
-        screen.setColor(r, g, b)
-        screen.fill(px, py + self.charH - 2, px + self.charW - 1, py + self.charH - 1)
+        screen.fill(px, py + self.charH - 2, px + self.charW - 1, py + self.charH - 1,
+                    Colors.rgba(self.fg))
         self.lastCursorX, self.lastCursorY = self.cx, self.cy
     else
         self.lastCursorX, self.lastCursorY = nil, nil

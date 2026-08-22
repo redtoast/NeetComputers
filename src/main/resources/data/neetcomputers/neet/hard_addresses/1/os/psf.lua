@@ -143,7 +143,7 @@ function Font:print(x, y, text, r, g, b)
         local glyph = self._glyphs[code]
         if glyph then
             local buf = getGlyphBuffer(glyph, r, g, b)
-            screen.drawPixels(cur, y, buf, glyph.width, glyph.height)
+            screen.writeData(cur, y, buf, glyph.width)
             cur = cur + glyph.width + spacing
         end
     end

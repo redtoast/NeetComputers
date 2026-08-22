@@ -164,6 +164,8 @@ function Util.readLine(term, opts)
                         cursor = #buffer
                         changed = true
                     end
+                elseif ev.key == "escape" and opts.cancelOnEscape then
+                    return nil
                 end
             end
         end

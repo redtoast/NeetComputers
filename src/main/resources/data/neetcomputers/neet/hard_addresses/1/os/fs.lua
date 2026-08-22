@@ -148,11 +148,53 @@ function Fs:copy(srcInput, dstInput)
     return self:writeAll(dstInput, data)
 end
 
+function Fs:deleteRecursive(input)
+    local target = self:resolve(input)
+    if not files.exists(target, self.disk) then
+        return false, "no such path: " .. target
+    end
+    if self:isDir(target) then
+        local children, err = self:list(target)
+        if not children then return false, err end
+        local prefix = target:sub(-1) == "/" and target or (target .. "/")
+        for _, child in ipairs(children) do
+            local ok, cerr = self:deleteRecursive(prefix .. child)
+            if not ok then return false, cerr end
+        end
+    end
+    return files.delete(target, self.disk)
+end
+
+function Fs:copyRecursive(srcInput, dstInput)
+    local src = self:resolve(srcInput)
+    local dst = self:resolve(dstInput)
+    if not files.exists(src, self.disk) then
+        return false, "no such path: " .. src
+    end
+    if self:isDir(src) then
+        if not files.exists(dst, self.disk) then
+            if not self:mkdir(dst) then
+                return false, "could not create " .. dst
+            end
+        end
+        local children, err = self:list(src)
+        if not children then return false, err end
+        local srcPrefix = src:sub(-1) == "/" and src or (src .. "/")
+        local dstPrefix = dst:sub(-1) == "/" and dst or (dst .. "/")
+        for _, child in ipairs(children) do
+            local ok, cerr = self:copyRecursive(srcPrefix .. child, dstPrefix .. child)
+            if not ok then return false, cerr end
+        end
+        return true
+    end
+    return self:copy(src, dst)
+end
+
 function Fs:move(srcInput, dstInput)
-    local ok, err = self:copy(srcInput, dstInput)
+    local src = self:resolve(srcInput)
+    local ok, err = self:copyRecursive(src, dstInput)
     if not ok then return false, err end
-    self:delete(srcInput)
-    return true
+    return self:deleteRecursive(src)
 end
 
 NeetOS.Fs = Fs

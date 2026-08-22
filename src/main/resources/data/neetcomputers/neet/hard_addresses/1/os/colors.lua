@@ -39,5 +39,14 @@ function Colors.rgb(name)
     return c[1], c[2], c[3]
 end
 
+function Colors.pack(r, g, b, a)
+    return string.char(r, g, b, a or 255)
+end
+
+function Colors.rgba(name, a)
+    local r, g, b = Colors.rgb(name)
+    return Colors.pack(r, g, b, a)
+end
+
 NeetOS.Colors = Colors
 return Colors
