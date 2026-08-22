@@ -3,17 +3,14 @@ package com.redtoast.simulation;
 import com.google.gson.internal.Primitives;
 import com.redtoast.simulation.annotations.*;
 import com.redtoast.simulation.annotations.Number;
-import com.redtoast.simulation.base.ExposedError;
 import com.redtoast.simulation.base.LanguageGeneric;
 import com.redtoast.simulation.parameterErrors.*;
 import com.redtoast.simulation.value.Value;
 import com.redtoast.simulation.value.ValueTypes.*;
 import com.redtoast.simulation.value.VarType;
 
-import java.lang.Exception;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Parameter;
 import java.util.Arrays;
 import java.util.Objects;
@@ -72,7 +69,7 @@ public record Parameters(ParameterType[] types, Class<?>[] classes, boolean isPa
                 name.append("[]".repeat(depth));
             }
             if (hasAnnotation(Index.class)) name.insert(0, '#');
-            if (hasAnnotation(CanNull.class)) name.insert(0, '~');
+            if (hasAnnotation(CanBeNull.class)) name.insert(0, '~');
             if (getAnnotation(Range.class) instanceof Range range) {
                 name.append(new char[]{' ', '<'});
                 name.append(range.min());
@@ -112,11 +109,11 @@ public record Parameters(ParameterType[] types, Class<?>[] classes, boolean isPa
             int size = isPacked ? size()-1 : size();
             /*check if values can be cast*/
             for (; i < Math.min(values.length, size); i++) {
-                if (!types[i].canCast(values[i]) && !hasAnnotation(types[i].annotations, CanNull.class)) throw new MismatchedArgumentError(i, values[i].getType(),types[i]);
+                if (!types[i].canCast(values[i]) && !hasAnnotation(types[i].annotations, CanBeNull.class)) throw new MismatchedArgumentError(i, values[i].getType(),types[i]);
             }
             /*throw errors for values that are missing*/
             for (; i < size; i++) {
-                if (!hasAnnotation(types[i].annotations, CanNull.class)) throw new MissingArgumentError(i, types[i]);
+                if (!hasAnnotation(types[i].annotations, CanBeNull.class)) throw new MissingArgumentError(i, types[i]);
             }
             if (isPacked) {
                 Tuple tuple = new Tuple();

@@ -2,7 +2,7 @@ package com.redtoast.APIS;
 
 import com.redtoast.Computer;
 import com.redtoast.Connections.PeripheralProvider;
-import com.redtoast.simulation.annotations.CanNull;
+import com.redtoast.simulation.annotations.CanBeNull;
 import com.redtoast.simulation.annotations.Exposed;
 import com.redtoast.simulation.annotations.Primative;
 import com.redtoast.simulation.base.API;
@@ -87,7 +87,7 @@ public class IOAPI implements API {
     }
 
     @Exposed
-    public void setTag(String uuidString, @CanNull String tag){
+    public void setTag(String uuidString, @CanBeNull String tag){
         try {
             UUID.fromString(uuidString);
         }catch (IllegalArgumentException illegalArgumentException){

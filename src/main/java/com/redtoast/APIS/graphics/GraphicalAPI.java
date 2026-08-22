@@ -3,21 +3,17 @@ package com.redtoast.APIS.graphics;
 import com.redtoast.graphics.RGBGraphicsArray;
 import com.redtoast.simulation.APILoader;
 import com.redtoast.simulation.Runtime;
-import com.redtoast.simulation.annotations.CanNull;
+import com.redtoast.simulation.annotations.CanBeNull;
 import com.redtoast.simulation.annotations.Exposed;
 import com.redtoast.simulation.base.Exposable;
 import com.redtoast.simulation.base.ExposedError;
 import com.redtoast.simulation.parameterErrors.RangeArgumentError;
-import com.redtoast.simulation.value.Value;
 import com.redtoast.simulation.value.ValueTypes.Bytes;
-import com.redtoast.simulation.value.ValueTypes.List;
 import com.redtoast.simulation.value.ValueTypes.Table;
 import com.redtoast.simulation.value.ValueTypes.Tuple;
 import org.apache.commons.lang3.ArrayUtils;
 
 import java.util.Arrays;
-import java.util.function.IntConsumer;
-import java.util.function.IntFunction;
 import java.util.stream.IntStream;
 
 public class GraphicalAPI implements Exposable {
@@ -165,7 +161,7 @@ public class GraphicalAPI implements Exposable {
     }
 
     @Exposed
-    public void set(@CanNull Integer RGBA) {
+    public void set(@CanBeNull Integer RGBA) {
         if (RGBA==null || RGBA==0xFF) {
             buffer = new int[width * height];
             return;

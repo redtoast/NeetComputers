@@ -1,7 +1,7 @@
 package com.redtoast.APIS;
 
 import com.redtoast.Computer;
-import com.redtoast.simulation.annotations.CanNull;
+import com.redtoast.simulation.annotations.CanBeNull;
 import com.redtoast.simulation.annotations.Exposed;
 import com.redtoast.simulation.base.API;
 import com.redtoast.simulation.base.ExposedError;
@@ -32,17 +32,17 @@ public class EventAPI implements API {
     }
 
     @Exposed
-    public Value<List> getQueue(String category, @CanNull String filter) {
+    public Value<List> getQueue(String category, @CanBeNull String filter) {
         return filter==null ? Value.of(eventManager.getQueue(decodeEventLabel(category))) : Value.of(eventManager.getQueue(decodeEventLabel(category), filter));
     }
 
     @Exposed
-    public Value<?> getFirst(String category, @CanNull String filter) {
+    public Value<?> getFirst(String category, @CanBeNull String filter) {
         return filter==null ? Value.of(eventManager.getFirst(decodeEventLabel(category))) : Value.of(eventManager.getFirst(decodeEventLabel(category), filter));
     }
 
     @Exposed
-    public void clear(@CanNull String category){
+    public void clear(@CanBeNull String category){
         if (category==null){
             eventManager.reset();
         }else{

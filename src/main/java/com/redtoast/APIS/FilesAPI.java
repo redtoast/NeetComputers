@@ -4,7 +4,7 @@ import com.redtoast.Computer;
 import com.redtoast.simulation.APILoader;
 import com.redtoast.simulation.FS.*;
 import com.redtoast.simulation.FS.FileImplementations.Filepath;
-import com.redtoast.simulation.annotations.CanNull;
+import com.redtoast.simulation.annotations.CanBeNull;
 import com.redtoast.simulation.annotations.Exposed;
 import com.redtoast.simulation.base.API;
 import com.redtoast.simulation.base.ExposedError;
@@ -28,7 +28,7 @@ public class FilesAPI implements API {
     }
 
     @Exposed
-    public List getPartitions(@CanNull Integer disk){
+    public List getPartitions(@CanBeNull Integer disk){
         GenericSystem diskSystem = getDisk(disk);
         List partitionsStrings = new List();
         for (Partition partition : diskSystem.getPartitions()){
@@ -38,7 +38,7 @@ public class FilesAPI implements API {
     }
 
     @Exposed
-    public Table getPartition(String name, @CanNull Integer disk){
+    public Table getPartition(String name, @CanBeNull Integer disk){
         GenericSystem diskSystem = getDisk(disk);
         Partition partition = diskSystem.getPartition(name);
         if (partition==null) return null;
@@ -50,31 +50,31 @@ public class FilesAPI implements API {
     }
 
     @Exposed
-    public boolean createPartition(String name, @CanNull Integer disk){
+    public boolean createPartition(String name, @CanBeNull Integer disk){
         GenericSystem diskSystem = getDisk(disk);
         return diskSystem.createPartition(name);
     }
 
     @Exposed
-    public boolean setPartitionHidden(String name, boolean state, @CanNull Integer disk){
+    public boolean setPartitionHidden(String name, boolean state, @CanBeNull Integer disk){
         GenericSystem diskSystem = getDisk(disk);
         return diskSystem.setPartitionHidden(name, state);
     }
 
     @Exposed
-    public boolean setPartitionReadOnly(String name, @CanNull Integer disk){
+    public boolean setPartitionReadOnly(String name, @CanBeNull Integer disk){
         GenericSystem diskSystem = getDisk(disk);
         return diskSystem.setPartitionReadOnly(name, true);
     }
 
     @Exposed
-    public boolean deletePartition(String name, @CanNull Integer disk){
+    public boolean deletePartition(String name, @CanBeNull Integer disk){
         GenericSystem diskSystem = getDisk(disk);
         return diskSystem.deletePartition(name);
     }
 
     @Exposed
-    public Table open(String path, @CanNull String mode, @CanNull Integer disk){
+    public Table open(String path, @CanBeNull String mode, @CanBeNull Integer disk){
         GenericSystem diskSystem = getDisk(disk);
         OpeningMode openingMode = FileHelper.getMode(mode==null ? "r" : mode);
         Filepath filepath = diskSystem.getFile(path);
@@ -87,37 +87,37 @@ public class FilesAPI implements API {
     }
 
     @Exposed
-    public List getChildren(String path, @CanNull Integer disk){
+    public List getChildren(String path, @CanBeNull Integer disk){
         GenericSystem diskSystem = getDisk(disk);
         return diskSystem.getChildren(path);
     }
 
     @Exposed
-    public boolean makeDir(String path, @CanNull Integer disk){
+    public boolean makeDir(String path, @CanBeNull Integer disk){
         GenericSystem diskSystem = getDisk(disk);
         return diskSystem.makeDir(path);
     }
 
     @Exposed
-    public boolean exists(String path, @CanNull Integer disk){
+    public boolean exists(String path, @CanBeNull Integer disk){
         GenericSystem diskSystem = getDisk(disk);
         return diskSystem.exists(path);
     }
 
     @Exposed
-    public boolean isFile(String path, @CanNull Integer disk){
+    public boolean isFile(String path, @CanBeNull Integer disk){
         GenericSystem diskSystem = getDisk(disk);
         return diskSystem.isFile(path);
     }
 
     @Exposed
-    public boolean isDir(String path, @CanNull Integer disk){
+    public boolean isDir(String path, @CanBeNull Integer disk){
         GenericSystem diskSystem = getDisk(disk);
         return diskSystem.isDir(path);
     }
 
     @Exposed
-    public boolean delete(String path, @CanNull Integer disk){
+    public boolean delete(String path, @CanBeNull Integer disk){
         GenericSystem diskSystem = getDisk(disk);
         return diskSystem.delete(path);
     }

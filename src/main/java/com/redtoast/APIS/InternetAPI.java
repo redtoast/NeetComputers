@@ -2,12 +2,10 @@ package com.redtoast.APIS;
 
 import com.redtoast.Computer;
 import com.redtoast.simulation.InternetManager;
-import com.redtoast.simulation.annotations.CanNull;
+import com.redtoast.simulation.annotations.CanBeNull;
 import com.redtoast.simulation.annotations.Exposed;
 import com.redtoast.simulation.base.API;
 import com.redtoast.simulation.base.ExposedError;
-import com.redtoast.simulation.value.Value;
-import com.redtoast.simulation.value.ValueTypes.Bytes;
 import com.redtoast.simulation.value.ValueTypes.Table;
 
 import java.net.URI;
@@ -24,7 +22,7 @@ public class InternetAPI implements API {
     }
 
     @Exposed
-    public int GET(String URL, @CanNull Table headers) {
+    public int GET(String URL, @CanBeNull Table headers) {
         try {
             Map<String, String> table = new HashMap<>();
             if (headers!=null) headers.foreach((key, value) -> table.put(Objects.requireNonNull(key.toString()), Objects.requireNonNull(value.toString())));
@@ -37,7 +35,7 @@ public class InternetAPI implements API {
     }
 
     @Exposed
-    public int POST(String URL, @CanNull Table headers, @CanNull byte[] body) {
+    public int POST(String URL, @CanBeNull Table headers, @CanBeNull byte[] body) {
         try {
             Map<String, String> table = new HashMap<>();
             if (headers!=null) headers.foreach((key, value) -> table.put(Objects.requireNonNull(key.toString()), Objects.requireNonNull(value.toString())));
@@ -50,7 +48,7 @@ public class InternetAPI implements API {
     }
 
     @Exposed
-    public int CreateWebsocket(String URL, @CanNull Table headers) {
+    public int CreateWebsocket(String URL, @CanBeNull Table headers) {
         try {
             Map<String, String> table = new HashMap<>();
             if (headers!=null) headers.foreach((key, value) -> table.put(Objects.requireNonNull(key.toString()), Objects.requireNonNull(value.toString())));
