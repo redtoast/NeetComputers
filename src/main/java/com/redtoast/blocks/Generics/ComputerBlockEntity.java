@@ -280,6 +280,7 @@ public class ComputerBlockEntity extends BlockEntity implements ExtendedScreenHa
         LinkedList<BlockPos> investigated = new LinkedList<>();
         LinkedList<NetworkReceiver> networkDevices = new LinkedList<>();
         todoList.add(getPos());
+        investigated.add(getPos());
 
         World world = getWorld();
 
