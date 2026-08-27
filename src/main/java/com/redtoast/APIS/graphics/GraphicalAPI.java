@@ -16,6 +16,8 @@ import org.apache.commons.lang3.ArrayUtils;
 import java.util.Arrays;
 import java.util.stream.IntStream;
 
+import static java.lang.Math.round;
+
 public class GraphicalAPI implements Exposable {
     private Runtime runtime;
     private final int height;
@@ -43,7 +45,7 @@ public class GraphicalAPI implements Exposable {
     }
 
     public static int pack(int red, int green, int blue, int alpha) {
-        return (red & 0xFF << 24) | (green & 0xFF << 16) | (blue & 0xFF << 8) | (alpha & 0xFF);
+        return (red << 24 & 0xFF000000) | (green << 16 & 0xFF0000) | (blue << 8 & 0xFF00) | (alpha & 0xFF);
     }
 
     @Exposed
@@ -69,28 +71,25 @@ public class GraphicalAPI implements Exposable {
 
     @Exposed
     public void writeLine(int x1, int y1, int x2, int y2, int red, int green, int blue, @CanBeNull Integer alpha) {
-        int RGBA = pack(red, green, blue, alpha == null ? 255 : alpha);
-        int dx = Math.abs(x2 - x1);
-        int dy = Math.abs(y2 - y1);
-        int sx = x1 < x2 ? 1 : -1;
-        int sy = y1 < y2 ? 1 : -1;
-        int err = dx - dy;
+        int dx = x2 - x1;
+        int dy = y2 - y1;
 
-        while (true) {
-            writePixel(x1, y2, red, green, blue, alpha);
+        int step;
+        if (Math.abs(dx) > Math.abs(dy))
+            step = Math.abs(dx);
+        else
+            step = Math.abs(dy);
 
-            if (x1 == x2 && y1 == y2)
-                break;
+        float x_incr = (float) dx / step;
+        float y_incr = (float) dy / step;
 
-            int e2 = 2 * err;
-            if (e2 > -dy) {
-                err = err - dy;
-                x1 = x1 + sx;
-            }
-            if (e2 < dx) {
-                err = err + dx;
-                y1 = y1 + sy;
-            }
+        float x = x1;
+        float y = y1;
+
+        for (int i = 0; i < step; i++) {
+            writePixel(round(x), round(y), red, green, blue, alpha);
+            x += x_incr;
+            y += y_incr;
         }
     }
 
