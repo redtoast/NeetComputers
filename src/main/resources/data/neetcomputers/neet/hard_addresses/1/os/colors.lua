@@ -44,8 +44,11 @@ function Colors.pack(r, g, b, a)
 end
 
 function Colors.rgba(name, a)
-    local r, g, b = Colors.rgb(name)
-    return Colors.pack(r, g, b, a)
+    local c = Colors.palette[name]
+    if not c then
+        return 240, 240, 240
+    end
+    return c[1], c[2], c[3], a or 255
 end
 
 NeetOS.Colors = Colors
