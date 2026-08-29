@@ -1,13 +1,10 @@
 package com.redtoast.simulation;
 
 import com.redtoast.Computer;
-import com.redtoast.neet.NeetComputersServer;
 import com.redtoast.simulation.FS.*;
 import com.redtoast.simulation.base.LangThread;
-import com.redtoast.simulation.base.LanguageGeneric;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * represents the code execution of a computer, and ticks on the computer ticking thread
@@ -17,29 +14,26 @@ public class Runtime {
     private final ComputerFileSystem fs;
     private final Computer parent;
     private LangThread thread = null;
+    private final RuntimeThread management;
     public APILoader loader = null;
 
     //state info
     private volatile boolean inTick = false;
     private boolean kill = false;
+    private boolean wantaTick = false;
 
     private volatile boolean killFlag = false;
-
-    public final Object tickLock = new Object();
 
     public Runtime(Computer Parent){
         fs = Parent.getFileSystem();
         parent = Parent;
+        management = new RuntimeThread(this);
+        management.setPriority(10);
+        management.start();
     }
 
     public boolean isInTick() {
         return inTick;
-    }
-
-    public boolean isSafeToDrop() {
-        synchronized (tickLock) {
-            return !inTick;
-        }
     }
 
     /**
@@ -81,14 +75,32 @@ public class Runtime {
         }
     }
 
-    public void requestKill(){
-        killFlag = true;
-    }
-
+    @ApiStatus.Internal
     public boolean shouldDie(){
         boolean temp = killFlag;
         if (temp) killFlag = false;
         return temp;
+    }
+
+    @ApiStatus.Internal
+    public void instructTick(boolean state) {
+        wantaTick = state;
+        if (state) {
+//            synchronized(management.getLock()) {
+//                System.out.println(3);
+//                management.getLock().notify();
+//            }
+            management.signal();
+        }
+    }
+
+    @ApiStatus.Internal
+    public boolean wantsToTick() {
+        return wantaTick;
+    }
+
+    public RuntimeThread getManagementThread() {
+        return management;
     }
 
     /**
@@ -96,29 +108,27 @@ public class Runtime {
      */
     public void tick(){
         String errorMessage = null;
-        synchronized (tickLock) {
-            if (!kill) {
-                if (thread == null) {
-                    kill = true;
-                    return;
+        if (!kill) {
+            if (thread == null) {
+                kill = true;
+                return;
+            }
+            if (thread.isAlive()) {
+                inTick = true;
+                try {
+                    if (parent.isCrashed()) return;
+                    thread.tick();
+                } finally {
+                    inTick = false;
                 }
-                if (thread.isAlive()) {
-                    inTick = true;
-                    try {
-                        if (parent.isCrashed()) return;
-                        thread.tick();
-                    } finally {
-                        inTick = false;
-                    }
-                    if (!thread.isAlive()) {
-                        errorMessage = thread.getErrorMessage();
-                        if (errorMessage != null) errorMessage = errorMessage.replaceAll("\t", "    ");
-                        thread = null;
-                    }
+                if (!thread.isAlive()) {
+                    errorMessage = thread.getErrorMessage();
+                    if (errorMessage != null) errorMessage = errorMessage.replaceAll("\t", "    ");
+                    thread = null;
                 }
-                if (thread == null) {
-                    kill = true;
-                }
+            }
+            if (thread == null) {
+                kill = true;
             }
         }
         if (shouldDie()){

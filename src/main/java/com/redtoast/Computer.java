@@ -10,7 +10,6 @@ import com.redtoast.graphics.RGBGraphicsArray;
 import com.redtoast.neet.NeetComputersServer;
 import com.redtoast.neet.Networking.CloseRGBPayload;
 import com.redtoast.neet.Networking.RGBComputerPayload;
-import com.redtoast.neet.ProcessManager;
 import com.redtoast.simulation.*;
 import com.redtoast.simulation.FS.ComputerFileSystem;
 import com.redtoast.simulation.FS.DiskError;
@@ -28,8 +27,6 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
@@ -300,7 +297,9 @@ public abstract class Computer implements BinaryGraphicsProvider {
             }
             maintainState();
             if (fileSystem!=null && runtime!=null && !runtime.isDead() && state == ComputerState.ON) {
-                step(delta);
+                //instruct the computer to be ticked
+                timeExecuted += delta;
+                runtime.instructTick(true);
                 fileSystem.update();
             }
             if (state == ComputerState.ON)
@@ -319,12 +318,6 @@ public abstract class Computer implements BinaryGraphicsProvider {
             clock += 1;
             clock %= 100;
         }
-    }
-
-    //steps the runtime forward (tick with less protection)
-    public void step(short delta){
-        timeExecuted += delta;
-        ProcessManager.queComputerTick(this);
     }
 
     //gets a list of all peripheral providers on the system
@@ -407,6 +400,7 @@ public abstract class Computer implements BinaryGraphicsProvider {
         if ((state == ComputerState.OFF || state == ComputerState.CRASHED) && runtime!=null) {
             internetManager.reset();
             eventManager.reset();
+            runtime.getManagementThread().kill();
             runtime=null;
             save = true;
         }

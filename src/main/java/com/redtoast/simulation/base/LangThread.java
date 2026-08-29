@@ -19,7 +19,7 @@ public abstract class LangThread {
     public void log(String message){
         if (NeetComputersServer.DO_LOGGING) logger.info(message);
     }
-    public void error(String message){
+    public static void error(String message){
         if (NeetComputersServer.DO_LOGGING) logger.warn(message);
     }
     public void kill(String message){

@@ -433,9 +433,6 @@ public class NeetComputersServer implements ModInitializer {
 		for (int i = 0; i < languageGenerics.size(); i++){
 			LanguageCache[i] = languageGenerics.get(i);
 		}
-
-		ProcessManager.clear();
-		for (int i = 0; i < (int) ConfigLoader.getServerConfig("processing-threads"); i++) ProcessManager.openNewThread();
 	}
 
 	public static int getNextPointer() {
