@@ -11,6 +11,7 @@ import com.redtoast.simulation.config.ComputerConfig;
 import com.redtoast.simulation.parameterErrors.*;
 import com.redtoast.simulation.value.Value;
 import com.redtoast.simulation.value.ValueTypes.*;
+import com.redtoast.simulation.value.VarFilter;
 import com.redtoast.simulation.value.VarType;
 
 import java.lang.annotation.Annotation;
@@ -31,13 +32,13 @@ public class LuaMaster implements LanguageGeneric {
     }
 
     @Override
-    public boolean canCast(Value<?> value, VarType castTo, Annotation[] annotations) {
-        VarType type = value.getType();
-        if (type!=VarType.NULL && castTo==VarType.ANY) return true;
-        if (castTo==VarType.PRIMITIVE) return value.instanceOf(VarType.PRIMITIVE);
+    public boolean canCast(Value<?> value, VarFilter castTo, Annotation[] annotations) {
+        VarFilter type = VarFilter.fromType(value.getType());
+        if (type!=VarFilter.NULL && castTo==VarFilter.ANY) return true;
+        if (castTo==VarFilter.PRIMITIVE) return value.getType().isPrimitive();
         if (castTo.isNumber() && value.getType().isNumber()){
             if (Parameters.getAnnotation(annotations, Range.class) instanceof Range range) {
-                boolean indexed = castTo==VarType.INT && Parameters.hasAnnotation(annotations, Index.class);
+                boolean indexed = castTo==VarFilter.INT && Parameters.hasAnnotation(annotations, Index.class);
                 int min = indexed ? range.min()+1 : range.min();
                 int max = indexed ? range.max()+1 : range.max();
                 double number = value.toDouble();
@@ -46,11 +47,11 @@ public class LuaMaster implements LanguageGeneric {
             return true;
         }
         if (type==castTo) return true;
-        if (castTo==VarType.STRING && type==VarType.BYTES) return true;
-        if (castTo==VarType.BYTES && type==VarType.STRING) return true;
-        if (castTo==VarType.LIST && type==VarType.TUPLE) return true;
-        if (castTo==VarType.TUPLE && type==VarType.LIST) return true;
-        if (castTo==VarType.TABLE && type==VarType.LIST) return value.toList().isEmpty();
+        if (castTo==VarFilter.STRING && type==VarFilter.BYTES) return true;
+        if (castTo==VarFilter.BYTES && type==VarFilter.STRING) return true;
+        if (castTo==VarFilter.LIST && type==VarFilter.TUPLE) return true;
+        if (castTo==VarFilter.TUPLE && type==VarFilter.LIST) return true;
+        if (castTo==VarFilter.TABLE && type==VarFilter.LIST) return value.toList().isEmpty();
         return false;
     }
 
@@ -110,7 +111,8 @@ public class LuaMaster implements LanguageGeneric {
                 ((Map<LuaValue, LuaValue>) var.getValue()).forEach((key, value) -> table.put(toValue(key), toValue(value)));
                 yield table.asValue();
             }
-            default -> Value.NULL;
+            case ERROR -> Value.asError((String) var.getValue());
+            default -> Value.INVALID;
         };
         output.setLanguage(this);
         return output;

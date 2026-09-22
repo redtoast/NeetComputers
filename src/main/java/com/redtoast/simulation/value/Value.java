@@ -39,7 +39,11 @@ public class Value<Type> {
     /**
      * static Value representation of null
      */
-    public final static Value<Null> NULL = new Value<>(new Null());
+    public final static Value<Null> NULL = new Value<>(Null.INSTANCE);
+    /**
+     * static Value representation of invalid types
+     */
+    public final static Value<Invalid> INVALID = new Value<>(Invalid.INSTANCE);
     /**
      * static Value representation of true
      */
@@ -57,8 +61,7 @@ public class Value<Type> {
      * initializes the value raw with no type protection, it's advisable to use {@link #of(Object)} instead
      * @param val value to encapsulate
      */
-    @Deprecated
-    public Value(Type val){
+    private Value(Type val){
         if (val instanceof Integer){
             type = VarType.INT;
         }else if (val instanceof Double){
@@ -81,6 +84,8 @@ public class Value<Type> {
             type = VarType.FUNCTION;
         }else if (val instanceof Exception){
             type = VarType.EXCEPTION;
+        }else if (val instanceof Invalid){
+            type = VarType.INVALID;
         }
         value = val;
     }
@@ -240,7 +245,7 @@ public class Value<Type> {
      * @return Integer or null
      */
     public @Nullable Integer toInt(){
-        if (instanceOf(VarType.NUMBER)){
+        if (instanceOf(VarGroup.NUMBER)){
             switch (type){
                 case INT:
                     return ((Integer) value);
@@ -259,7 +264,7 @@ public class Value<Type> {
      * @return Double or null
      */
     public @Nullable Double toDouble(){
-        if (instanceOf(VarType.NUMBER)){
+        if (instanceOf(VarGroup.NUMBER)){
             switch (type){
                 case INT:
                     return (double)((Integer) value);
@@ -278,7 +283,7 @@ public class Value<Type> {
      * @return Float or null
      */
     public @Nullable Float toFloat(){
-        if (instanceOf(VarType.NUMBER)){
+        if (instanceOf(VarGroup.NUMBER)){
             switch (type){
                 case INT:
                     return (float)((Integer) value);
@@ -397,32 +402,44 @@ public class Value<Type> {
      * @return the result of the test preformed
      */
     public boolean instanceOf(VarType comparison){
-        if (comparison==VarType.ANY) return true;
-        if (comparison==VarType.PRIMITIVE){
+        return comparison==type;
+    }
+
+    public boolean instanceOf(VarGroup comparison){
+        if (comparison==VarGroup.ANY) return true;
+        if (comparison==VarGroup.PRIMITIVE){
             switch (type){
                 case NULL, FLOAT, INT, DOUBLE, STRING, BYTES, BOOLEAN: return true;
             }
         }
-        if (comparison==VarType.STRING && type==VarType.BYTES) return true;
-        if (comparison==VarType.BINARY && (type==VarType.BYTES || type==VarType.STRING)) return true;
-        if (comparison==VarType.NUMBER && type==VarType.INT) return true;
-        if (comparison==VarType.NUMBER && type==VarType.DOUBLE) return true;
-        if (comparison==VarType.NUMBER && type==VarType.FLOAT) return true;
-        if (comparison==VarType.TABLE && type==VarType.LIST) return ((List) value).isEmpty();
-        if (comparison==VarType.LIST && type==VarType.TABLE) return ((Table) value).isEmpty();
-        return comparison==type;
+        if (comparison==VarGroup.NUMBER && type==VarType.INT) return true;
+        if (comparison==VarGroup.NUMBER && type==VarType.DOUBLE) return true;
+        return comparison == VarGroup.NUMBER && type == VarType.FLOAT;
+    }
+
+    public boolean instanceOf(VarFilter comparison){
+        if (comparison==VarFilter.ANY) return true;
+        if (comparison==VarFilter.PRIMITIVE){
+            switch (type){
+                case NULL, FLOAT, INT, DOUBLE, STRING, BYTES, BOOLEAN: return true;
+            }
+        }
+        if (comparison==VarFilter.NUMBER && type==VarType.INT) return true;
+        if (comparison==VarFilter.NUMBER && type==VarType.DOUBLE) return true;
+        if (comparison == VarFilter.NUMBER && type == VarType.FLOAT) return true;
+        return comparison.toType()==type;
     }
 
     /**
      * Asks the associated language if the value can be cast to the given type, falls back on {@link #instanceOf(VarType)} if no language is found
      */
-    public boolean canCast(VarType type, Annotation[] annotations) {
+    public boolean canCast(VarFilter type, Annotation[] annotations) {
         if (language != null) {
             return language.canCast(this, type, annotations);
         }else{
-            if (this.type==VarType.INT && (type==VarType.DOUBLE || type==VarType.FLOAT)) return true;
-            if (this.type==VarType.DOUBLE && (type==VarType.INT || type==VarType.FLOAT)) return true;
-            if (this.type==VarType.FLOAT && (type==VarType.INT || type==VarType.DOUBLE)) return true;
+            if (this.type==VarType.INT && (type==VarFilter.DOUBLE || type==VarFilter.FLOAT)) return true;
+            if (this.type==VarType.DOUBLE && (type==VarFilter.INT || type==VarFilter.FLOAT)) return true;
+            if (this.type==VarType.FLOAT && (type==VarFilter.INT || type==VarFilter.DOUBLE)) return true;
             return instanceOf(type);
         }
     }
@@ -431,7 +448,7 @@ public class Value<Type> {
      * Asks the associated language if the value can be cast to the given type, falls back on {@link #instanceOf(VarType)} if no language is found
      */
     public boolean canCast(VarType type) {
-        return canCast(type, new Annotation[0]);
+        return canCast(type.toFilter(), new Annotation[0]);
     }
 
     /**
@@ -520,10 +537,10 @@ public class Value<Type> {
                 return "double";
             case FLOAT:
                 return "float";
-            case NUMBER:
-                return "number";
             case BOOLEAN:
                 return "boolean";
+            case INVALID:
+                return "invalid";
             case STRING:
                 return "string";
             case TABLE:
@@ -538,10 +555,6 @@ public class Value<Type> {
                 return "exemption";
             case BYTES:
                 return "bytes";
-            case PRIMITIVE:
-                return "primitive";
-            case ANY:
-                return "all";
         }
         return "null";
     }

@@ -7,6 +7,8 @@ import com.redtoast.simulation.base.LanguageGeneric;
 import com.redtoast.simulation.parameterErrors.*;
 import com.redtoast.simulation.value.Value;
 import com.redtoast.simulation.value.ValueTypes.*;
+import com.redtoast.simulation.value.VarFilter;
+import com.redtoast.simulation.value.VarGroup;
 import com.redtoast.simulation.value.VarType;
 
 import java.lang.annotation.Annotation;
@@ -18,15 +20,15 @@ import java.util.Optional;
 
 public record Parameters(ParameterType[] types, Class<?>[] classes, boolean isPacked) {
     private static final Parameters empty = new Parameters(new ParameterType[0], new Class[0], false);
-    private static final Parameters any = new Parameters(new ParameterType[]{new ParameterType(VarType.TUPLE, VarType.ANY, 1, new Annotation[0])}, new Class[]{Object[].class}, true);
+    private static final Parameters any = new Parameters(new ParameterType[]{new ParameterType(VarFilter.TUPLE, VarFilter.ANY, 1, new Annotation[0])}, new Class[]{Object[].class}, true);
 
-    public record ParameterType(VarType type, VarType filter, int depth, Annotation[] annotations) {
+    public record ParameterType(VarFilter type, VarFilter filter, int depth, Annotation[] annotations) {
         public boolean canCast(Value<?> value) {
-            if (type == VarType.LIST || type == VarType.TUPLE) {
+            if (type == VarFilter.LIST || type == VarFilter.TUPLE) {
                 if (!value.canCast(type, annotations)) return false;
                 return iterate(1, value);
             }else{
-                if (type==VarType.ANY) return true;
+                if (type==VarFilter.ANY) return true;
                 return value.canCast(type, annotations);
             }
         }
@@ -38,12 +40,12 @@ public record Parameters(ParameterType[] types, Class<?>[] classes, boolean isPa
                     if (val.getType() != VarType.LIST && val.getType() != VarType.TUPLE) return false;
                     boolean retrn = iterate(i+1, val);
                     if (!retrn) {
-                        if (type == VarType.TUPLE) throw new MismatchedVarargsError(i, val.getType(), null);
+                        if (type == VarFilter.TUPLE) throw new MismatchedVarargsError(i, val.getType(), null);
                         return false;
                     }
                 }else{
                     if (!val.canCast(filter, annotations)) {
-                        if (type == VarType.TUPLE) throw new MismatchedVarargsError(i, val.getType(), null);
+                        if (type == VarFilter.TUPLE) throw new MismatchedVarargsError(i, val.getType(), null);
                         return false;
                     }
                 }
@@ -182,7 +184,7 @@ public record Parameters(ParameterType[] types, Class<?>[] classes, boolean isPa
             try{
                 parameterTypes[i] = configureList(inferType(parameters[i].getType(), i == parameters.length-1, 0, parameters[i].getDeclaredAnnotations()), parameters[i].isVarArgs());
                 classes[i] = parameters[i].getType();
-                if (i == parameters.length-1) varargs = parameters[i].isVarArgs() && parameterTypes[i].depth>0 || parameterTypes[i].type==VarType.TUPLE;
+                if (i == parameters.length-1) varargs = parameters[i].isVarArgs() && parameterTypes[i].depth>0 || parameterTypes[i].type==VarFilter.TUPLE;
             } catch (IllegalStateException ignored){
                 throw new IllegalArgumentException("Failed to recognize parameterErrors type "+parameters[i].getType().toString()+" at parameterErrors #"+i);
             }
@@ -225,7 +227,7 @@ public record Parameters(ParameterType[] types, Class<?>[] classes, boolean isPa
         for (int i = 0; i < casts.length; i++) {
             try{
                 parameterTypes[i] = configureList(inferType(casts[i], i == casts.length-1, 0, new Annotation[0]), false);
-                if (i == casts.length-1) varargs = parameterTypes[i].type==VarType.TUPLE;
+                if (i == casts.length-1) varargs = parameterTypes[i].type==VarFilter.TUPLE;
             } catch (IllegalStateException ignored){
                 throw new IllegalArgumentException("Failed to recognize parameterErrors type "+casts[i].toString()+" at parameterErrors #"+i);
             }
@@ -234,8 +236,8 @@ public record Parameters(ParameterType[] types, Class<?>[] classes, boolean isPa
     }
 
     private static ParameterType configureList(ParameterType type, boolean tuple) {
-        if (type.depth>0 && type.filter==VarType.NULL) {
-            return new ParameterType(tuple ? VarType.TUPLE : VarType.LIST, type.type(), type.depth, type.annotations);
+        if (type.depth>0 && type.filter==VarFilter.NULL) {
+            return new ParameterType(tuple ? VarFilter.TUPLE : VarFilter.LIST, type.type(), type.depth, type.annotations);
         }
         return type;
     }
@@ -259,40 +261,40 @@ public record Parameters(ParameterType[] types, Class<?>[] classes, boolean isPa
     }
 
     private static ParameterType inferType(Class<?> clazz, boolean allowTuple, int entryDepth, Annotation[] annotations) {
-        VarType type = VarType.NULL;
+        VarFilter type = VarFilter.NULL;
         int depth = entryDepth;
-        VarType filter = VarType.NULL;
+        VarGroup filter = VarGroup.NONE;
         if (entryDepth>0 && Primitives.isPrimitive(clazz)) throw new IllegalArgumentException("Parameter arrays cant be primitive I.E (int[] should be Integer[])");
-        if (clazz == int.class || clazz == Integer.class) type = VarType.INT;
-        if (clazz == double.class || clazz == Double.class) type = VarType.DOUBLE;
-        if (clazz == float.class || clazz == Float.class) type = VarType.FLOAT;
-        if (clazz == boolean.class || clazz == Boolean.class) type = VarType.BOOLEAN;
-        if (clazz == byte[].class || clazz == Bytes.class) type = VarType.BYTES;
-        if (clazz == char[].class || clazz == String.class) type = VarType.STRING;
+        if (clazz == int.class || clazz == Integer.class) type = VarFilter.INT;
+        if (clazz == double.class || clazz == Double.class) type = VarFilter.DOUBLE;
+        if (clazz == float.class || clazz == Float.class) type = VarFilter.FLOAT;
+        if (clazz == boolean.class || clazz == Boolean.class) type = VarFilter.BOOLEAN;
+        if (clazz == byte[].class || clazz == Bytes.class) type = VarFilter.BYTES;
+        if (clazz == char[].class || clazz == String.class) type = VarFilter.STRING;
         if (clazz == List.class) {
-            type = VarType.LIST;
+            type = VarFilter.LIST;
             depth++;
-            filter = VarType.ANY;
-            if (hasAnnotation(annotations, Primative.class)) filter = VarType.PRIMITIVE;
-            if (hasAnnotation(annotations, Number.class)) filter = VarType.NUMBER;
+            filter = VarGroup.ANY;
+            if (hasAnnotation(annotations, Primative.class)) filter = VarGroup.PRIMITIVE;
+            if (hasAnnotation(annotations, Number.class)) filter = VarGroup.NUMBER;
         }
         if (clazz == Tuple.class) {
-            type = allowTuple ? VarType.TUPLE : VarType.LIST;
+            type = allowTuple ? VarFilter.TUPLE : VarFilter.LIST;
             depth++;
-            filter = VarType.ANY;
-            if (hasAnnotation(annotations, Primative.class)) filter = VarType.PRIMITIVE;
-            if (hasAnnotation(annotations, Number.class)) filter = VarType.NUMBER;
+            filter = VarGroup.ANY;
+            if (hasAnnotation(annotations, Primative.class)) filter = VarGroup.PRIMITIVE;
+            if (hasAnnotation(annotations, Number.class)) filter = VarGroup.NUMBER;
         }
-        if (clazz == Table.class) type = VarType.TABLE;
-        if (clazz == Function.class) type = VarType.FUNCTION;
-        if (clazz == Object.class || clazz == Value.class) type = hasAnnotation(annotations, Primative.class) ? VarType.PRIMITIVE : hasAnnotation(annotations, Number.class) ?  VarType.NUMBER : VarType.ANY;
-        if (type == VarType.NULL) {
+        if (clazz == Table.class) type = VarFilter.TABLE;
+        if (clazz == Function.class) type = VarFilter.FUNCTION;
+        if (clazz == Object.class || clazz == Value.class) type = hasAnnotation(annotations, Primative.class) ? VarFilter.PRIMITIVE : hasAnnotation(annotations, Number.class) ?  VarFilter.NUMBER : VarFilter.ANY;
+        if (type == VarFilter.NULL) {
             if (clazz.isArray()) {
                 return inferType(clazz.componentType(), allowTuple, depth + 1, annotations);
             }
             throw new IllegalStateException("Attempted to parse unrecognized parameterErrors type");
         }
-        return new ParameterType(type, filter, depth, annotations);
+        return new ParameterType(type, filter.toFilter(), depth, annotations);
     }
 
     public static Parameters empty() {

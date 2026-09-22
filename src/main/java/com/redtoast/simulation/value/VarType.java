@@ -4,7 +4,6 @@ public enum VarType {
     INT(true, true),
     DOUBLE(true, true),
     FLOAT(true, true),
-    NUMBER(true, true),
     BOOLEAN(false, true),
     STRING(false, true),
     NULL(false, false),
@@ -14,9 +13,7 @@ public enum VarType {
     LIST(false, false),
     TUPLE(false, false),
     BYTES(false, true),
-    BINARY(false, false),
-    PRIMITIVE(false, true),
-    ANY(false, false);
+    INVALID(false, false);
 
     private final boolean isNumber;
     private final boolean isPrimitive;
@@ -32,6 +29,10 @@ public enum VarType {
 
     public boolean isPrimitive() {
         return isPrimitive;
+    }
+
+    public VarFilter toFilter() {
+        return VarFilter.fromType(this);
     }
 
     @Override

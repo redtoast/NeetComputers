@@ -12,6 +12,9 @@ import com.redtoast.simulation.value.Value;
  * @see Exception
  */
 public class Null{
+    public static final Null INSTANCE = new Null();
+    private Null() {}
+
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof Null){
