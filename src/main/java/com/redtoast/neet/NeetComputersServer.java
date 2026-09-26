@@ -1,6 +1,7 @@
 package com.redtoast.neet;
 
 import com.redtoast.items.*;
+import com.redtoast.simulation.RuntimeThread;
 import dev.ryanhcode.sable.companion.SableCompanion;
 import com.mojang.brigadier.CommandDispatcher;
 import net.minecraft.text.Text;
@@ -151,6 +152,15 @@ public class NeetComputersServer implements ModInitializer {
 											.requires(source -> source.hasPermissionLevel(1))
 											.executes(context -> {
 												context.getSource().sendFeedback(() -> Text.literal("Next pointer is " + nextPointer), false);
+												return 1;
+											})
+									)
+							)
+							.then(CommandManager.literal("number")
+									.then(CommandManager.literal("threads")
+											.requires(source -> source.hasPermissionLevel(1))
+											.executes(context -> {
+												context.getSource().sendFeedback(() -> Text.literal("There are " + RuntimeThread.size() + " runtime threads"), false);
 												return 1;
 											})
 									)
