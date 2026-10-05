@@ -11,6 +11,8 @@ import com.redtoast.graphics.BinaryGraphicsArray;
 import com.redtoast.graphics.screens.RGBScreenHandler;
 import com.redtoast.graphics.RGBGraphicsArray;
 import com.redtoast.items.Disk;
+import com.redtoast.items.HardDrive;
+import com.redtoast.neet.BulkRegistry;
 import com.redtoast.neet.Networking.BinaryGraphicsPayload;
 import com.redtoast.neet.Networking.ComputerScreenInitPayload;
 import com.redtoast.neet.config.ConfigLoader;
@@ -151,6 +153,7 @@ public class ComputerBlockEntity extends BlockEntity implements ExtendedScreenHa
         if (player.isSneaking()){
             if (computer.isDead() && computer.hasFiles() && player.getMainHandStack().isEmpty()) {
                 player.setStackInHand(player.getActiveHand(), computer.ejectFS());
+                player.sendMessage(Text.literal("Disk ejected"));
             }else{
                 computer.stop();
             }
@@ -161,7 +164,7 @@ public class ComputerBlockEntity extends BlockEntity implements ExtendedScreenHa
             if (computer.isDead() && !computer.hasFiles() && player.getMainHandStack().getItem() instanceof Disk disk) {
                 ItemStack stack = player.getMainHandStack();
                 computer.setFileSystem(disk.getAddress(stack, null), disk.getTemplate(stack));
-                if (!player.isCreative() && !disk.isDefault(stack))
+                if (!player.isCreative() || (stack.getItem() instanceof HardDrive))
                     player.setStackInHand(player.getActiveHand(), ItemStack.EMPTY);
                 else
                     disk.nullify(stack);
