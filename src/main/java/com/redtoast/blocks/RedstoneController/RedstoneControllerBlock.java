@@ -76,7 +76,12 @@ public class RedstoneControllerBlock extends FacingBlock implements BlockEntityP
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(World world, BlockState state, BlockEntityType<T> type) {
         return type == BulkRegistry.fetchBlockEntityType("redstone_controller") ? (world2, blockPos, blockState, t) -> {
             if (world2!=null && world2.getBlockEntity(blockPos) instanceof RedstoneControllerBlockEntity redstoneControllerBlockEntity){
-                for (Direction direction : Direction.values()) redstoneControllerBlockEntity.submitDirection(getPowerInDirection(world2, blockPos.offset(direction), direction.getOpposite()), direction);
+                for (Direction direction : Direction.values()) {
+                    BlockPos farBlock = blockPos.offset(direction);
+                    int basePower = getPowerInDirection(world2, farBlock, direction.getOpposite());
+                    int comparator = world2.getBlockState(farBlock).hasComparatorOutput() ? world2.getBlockState(farBlock).getComparatorOutput(world2, farBlock) : basePower;
+                    redstoneControllerBlockEntity.submitDirection(basePower, comparator, direction);
+                }
                 redstoneControllerBlockEntity.checkUpdate();
             }
         } : null;

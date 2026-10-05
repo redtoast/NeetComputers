@@ -16,7 +16,8 @@ import net.minecraft.util.math.Direction;
 
 public class RedstoneControllerBlockEntity extends PeripheralBlockEntity {
     private int[] levels = new int[6];
-    private int[] scan = new int[6];
+    private final int[] scan = new int[6];
+    private final int[] comparator = new int[6];
     private final Direction facing;
     private boolean shouldUpdate = true;
 
@@ -41,8 +42,9 @@ public class RedstoneControllerBlockEntity extends PeripheralBlockEntity {
         return levels[direction.ordinal()] & 15;
     }
 
-    public void submitDirection(int power, Direction direction) {
+    public void submitDirection(int power, int comparator, Direction direction) {
         scan[direction.ordinal()] = power;
+        this.comparator[direction.ordinal()] = comparator;
     }
 
     public void checkUpdate(){
@@ -62,6 +64,12 @@ public class RedstoneControllerBlockEntity extends PeripheralBlockEntity {
     public int getInput(String direction) {
         Direction cardinalDirection = translate(direction);
         return Math.max(getPowerOutput(cardinalDirection), scan[cardinalDirection.ordinal()]);
+    }
+
+    @Exposed
+    public int getComparator(String direction) {
+        Direction cardinalDirection = translate(direction);
+        return Math.max(getPowerOutput(cardinalDirection), comparator[cardinalDirection.ordinal()]);
     }
 
     @Exposed
