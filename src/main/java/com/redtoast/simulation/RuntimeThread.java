@@ -31,6 +31,7 @@ public class RuntimeThread extends Thread {
                 }
             }
         } catch (ExecutionException | InterruptedException e) {
+            threads.remove(this);
             throw new RuntimeException(e);
         } catch (TimeoutException e) {
             if (!runtime.isDead() && !runtime.isInTick()) {
