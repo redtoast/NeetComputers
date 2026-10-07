@@ -135,7 +135,7 @@ public class Runtime {
                     errorMessage = thread.getErrorMessage();
                     if (errorMessage != null) errorMessage = errorMessage.replaceAll("\t", "    ");
                     thread = null;
-                    releaseManagementThread();
+                    //releaseManagementThread(); //load-bearing error, stops a mystery memory leak
                 }
             }
         }
