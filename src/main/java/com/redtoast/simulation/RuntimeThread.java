@@ -24,7 +24,10 @@ public class RuntimeThread extends Thread {
     public void run(){
         threads.add(this);
         try{
-            while (!this.isInterrupted() && block.get(3, TimeUnit.SECONDS) != 1) {
+            while (!this.isInterrupted()) {
+                if (block.get(3, TimeUnit.SECONDS) == 1) {
+                    break;
+                }
                 if (runtime.wantsToTick()) {
                     runtime.instructTick(false);
                     runtime.tick();
