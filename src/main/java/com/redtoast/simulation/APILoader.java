@@ -11,6 +11,7 @@ import com.redtoast.simulation.parameterErrors.ParameterException;
 import com.redtoast.simulation.value.Value;
 import com.redtoast.simulation.value.ValueTypes.Exception;
 import com.redtoast.simulation.value.ValueTypes.*;
+import dan200.computercraft.api.lua.LuaException;
 import net.minecraft.util.crash.CrashException;
 import net.minecraft.util.crash.CrashReport;
 import org.jetbrains.annotations.Nullable;
@@ -157,6 +158,9 @@ public class APILoader {
                     return processReturn(retun);
                 }catch (InvocationTargetException e){
                     if (e.getTargetException() instanceof ExposedError error) {
+                        return Value.asError(error.getMessage());
+                    }
+                    if (e.getTargetException() instanceof LuaException error) {
                         return Value.asError(error.getMessage());
                     }
                     if (e.getTargetException() instanceof ParameterException parameterException) {

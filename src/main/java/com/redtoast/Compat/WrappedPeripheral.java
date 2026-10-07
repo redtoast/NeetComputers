@@ -2,6 +2,7 @@ package com.redtoast.Compat;
 
 import com.redtoast.Computer;
 import com.redtoast.Connections.PeripheralProvider;
+import com.redtoast.neet.NeetComputersServer;
 import com.redtoast.simulation.APILoader;
 import com.redtoast.simulation.Runtime;
 import com.redtoast.simulation.Parameters;
@@ -39,8 +40,24 @@ public class WrappedPeripheral implements PeripheralProvider {
                 }else{
                     names.addAll(Arrays.asList(annotation.value()));
                 }
-                Function buffer = APILoader.sandboxFunction(method, peripheral, Parameters.any(), runtime);
-                //if (annotation.mainThread()) buffer.makeMainThread();
+                Parameters ruleset = Parameters.deduceCCTParameters(method);
+                Function buffer = APILoader.sandboxFunction(method, peripheral, ruleset, runtime);
+                if (annotation.mainThread()) {
+                    Function finalBuffer = buffer;
+                    buffer = new Function(false, finalBuffer.getName(), finalBuffer.getRules()) {
+                        @Override
+                        public Value call(Value<?>[] parameters) {
+                            UUID uuid = UUID.randomUUID();
+                            NeetComputersServer.mainThreadTicketTable.put(uuid, new MainThreadTicket(() -> finalBuffer.call(parameters)));
+                            while (!NeetComputersServer.mainThreadTicketTable.get(uuid).isComplete()) {
+
+                            }
+                            Value answer = NeetComputersServer.mainThreadTicketTable.get(uuid).getAnswer();
+                            NeetComputersServer.mainThreadTicketTable.remove(uuid);
+                            return answer;
+                        }
+                    };
+                }
                 functionLookup.put(method, buffer);
             }
         }
@@ -80,7 +97,9 @@ public class WrappedPeripheral implements PeripheralProvider {
 
     @Override
     public String getTypeName() {
-        return peripheral.getType();
+        String name = peripheral.getType();
+        if (!name.contains(":")) return "computercraft:"+name;
+        return name;
     }
 
     @Override

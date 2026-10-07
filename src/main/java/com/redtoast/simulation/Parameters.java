@@ -10,17 +10,22 @@ import com.redtoast.simulation.value.ValueTypes.*;
 import com.redtoast.simulation.value.VarFilter;
 import com.redtoast.simulation.value.VarGroup;
 import com.redtoast.simulation.value.VarType;
+import dan200.computercraft.api.lua.Coerced;
+import dan200.computercraft.api.lua.IArguments;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
+import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
+import java.lang.reflect.ParameterizedType;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
 
-public record Parameters(ParameterType[] types, Class<?>[] classes, boolean isPacked) {
-    private static final Parameters empty = new Parameters(new ParameterType[0], new Class[0], false);
-    private static final Parameters any = new Parameters(new ParameterType[]{new ParameterType(VarFilter.TUPLE, VarFilter.ANY, 1, new Annotation[0])}, new Class[]{Object[].class}, true);
+public record Parameters(ParameterType[] types, Class<?>[] classes, Class<?>[] wrappers, boolean isPacked) {
+    private static final Parameters empty = new Parameters(new ParameterType[0], new Class[0], new Class[0], false);
+    private static final Parameters any = new Parameters(new ParameterType[]{new ParameterType(VarFilter.TUPLE, VarFilter.ANY, 1, new Annotation[0])}, new Class[]{Object[].class}, new Class[]{null}, true);
 
     public record ParameterType(VarFilter type, VarFilter filter, int depth, Annotation[] annotations) {
         public boolean canCast(Value<?> value) {
@@ -90,15 +95,15 @@ public record Parameters(ParameterType[] types, Class<?>[] classes, boolean isPa
             int i = 0;
             int x = size()-1;
             for (; i < x; i++) {
-                array[i] = cast(values[i], classes[i], false, types[i].annotations());
+                array[i] = wrap(cast(values[i], classes[i], false, types[i].annotations()), wrappers[i]);
             }
             for (; i < values.length; i++) {
                 varargs.add(values[i]);
             }
-            array[x] = cast(varargs.asValue(), classes[x], true, types[x].annotations());
+            array[x] = wrap(cast(varargs.asValue(), classes[x], true, types[x].annotations()), wrappers[x]);
         }else{
             for (int i = 0; i < size(); i++) {
-                array[i] = cast(i >= values.length ? Value.NULL : values[i], classes[i], false, types[i].annotations());
+                array[i] = wrap(cast(i >= values.length ? Value.NULL : values[i], classes[i], false, types[i].annotations()), wrappers[i]);
             }
         }
         return array;
@@ -135,6 +140,16 @@ public record Parameters(ParameterType[] types, Class<?>[] classes, boolean isPa
 
     public int size() {return types.length;}
 
+    public static Object wrap(Object object, Class<?> clazz) {
+        if (clazz == Coerced.class) {
+            return new Coerced<>(object);
+        }
+        if (clazz == Optional.class) {
+            return Optional.ofNullable(object);
+        }
+        return object;
+    }
+
     public static Object cast(Value<?> value, Class<?> clazz, boolean pack, Annotation[] annotations) {
         if (value.isNull()) return null;
         if (clazz == int.class) return checkExists(value.castTo(VarType.INT, annotations).getValue());
@@ -147,7 +162,8 @@ public record Parameters(ParameterType[] types, Class<?>[] classes, boolean isPa
         if (clazz == Boolean.class) return checkExists(value.castTo(VarType.BOOLEAN, annotations).getValue());
         if (clazz == byte[].class) return checkExists(value.castTo(VarType.BYTES, annotations).toBytes().getData());
         if (clazz == Bytes.class) return checkExists(value.castTo(VarType.BYTES, annotations).getValue());
-        if (clazz == char[].class) return checkExists(value.castTo(VarType.STRING, annotations).toString().toCharArray());
+        if (clazz == ByteBuffer.class) return ByteBuffer.wrap((byte[]) checkExists(value.castTo(VarType.BYTES, annotations).getValue()));
+        if (clazz == char[].class) return checkExists(value.castTo(VarType.STRING, annotations)).toString().toCharArray();
         if (clazz == String.class) return checkExists(value.castTo(VarType.STRING, annotations).getValue());
         if (clazz == Table.class) return checkExists(value.castTo(VarType.TABLE, annotations).getValue());
         if (clazz == Function.class) return checkExists(value.castTo(VarType.FUNCTION, annotations).getValue());
@@ -189,7 +205,41 @@ public record Parameters(ParameterType[] types, Class<?>[] classes, boolean isPa
                 throw new IllegalArgumentException("Failed to recognize parameterErrors type "+parameters[i].getType().toString()+" at parameterErrors #"+i);
             }
         }
-        return new Parameters(parameterTypes, classes, varargs);
+        return new Parameters(parameterTypes, classes, new Class[parameters.length], varargs);
+    }
+
+    public static Parameters deduceCCTParameters(Method method) {
+        Parameter[] parameters = method.getParameters();
+        ParameterType[] parameterTypes = new ParameterType[parameters.length];
+        Class<?>[] classes = new Class[parameters.length];
+        Class<?>[] wrappers = new Class[parameters.length];
+        boolean varargs = false;
+        for (int i = 0; i < parameters.length; i++) {
+            try{
+                Class<?> type = parameters[i].getType();
+                Annotation[] annotations = parameters[i].getDeclaredAnnotations();
+                if (type.isAssignableFrom(Optional.class)) {
+                    type = (Class<?>) ((ParameterizedType) method.getGenericParameterTypes()[i]).getActualTypeArguments()[0];
+                    Annotation[] nAnnotations = new Annotation[annotations.length+1];
+                    System.arraycopy(annotations, 0, nAnnotations, 1, annotations.length);
+                    nAnnotations[0] = new CanBeNull(){
+                        @Override
+                        public Class<? extends Annotation> annotationType() {return CanBeNull.class;}
+                    };
+                    annotations = nAnnotations;
+                    wrappers[i] = Optional.class;
+                }else if (type.isAssignableFrom(Coerced.class)) {
+                    type = (Class<?>) ((ParameterizedType) method.getGenericParameterTypes()[i]).getActualTypeArguments()[0];
+                    wrappers[i] = Coerced.class;
+                }
+                parameterTypes[i] = configureList(inferType(type, i == parameters.length-1, 0, annotations), parameters[i].isVarArgs());
+                classes[i] = type;
+                if (i == parameters.length-1) varargs = parameters[i].isVarArgs() && parameterTypes[i].depth>0 || parameterTypes[i].type==VarFilter.TUPLE;
+            } catch (IllegalStateException ignored){
+                throw new IllegalArgumentException("Failed to recognize parameterErrors type "+parameters[i].getType().toString()+" at parameterErrors #"+i);
+            }
+        }
+        return new Parameters(parameterTypes, classes, wrappers, varargs);
     }
 
     public static Function attachSelectiveErrors(java.util.List<Function> unpatchedFunctions, String name, Runtime runtime) {
@@ -232,7 +282,7 @@ public record Parameters(ParameterType[] types, Class<?>[] classes, boolean isPa
                 throw new IllegalArgumentException("Failed to recognize parameterErrors type "+casts[i].toString()+" at parameterErrors #"+i);
             }
         }
-        return new Parameters(parameterTypes, casts, varargs);
+        return new Parameters(parameterTypes, casts, new Class[casts.length], varargs);
     }
 
     private static ParameterType configureList(ParameterType type, boolean tuple) {
@@ -269,7 +319,7 @@ public record Parameters(ParameterType[] types, Class<?>[] classes, boolean isPa
         if (clazz == double.class || clazz == Double.class) type = VarFilter.DOUBLE;
         if (clazz == float.class || clazz == Float.class) type = VarFilter.FLOAT;
         if (clazz == boolean.class || clazz == Boolean.class) type = VarFilter.BOOLEAN;
-        if (clazz == byte[].class || clazz == Bytes.class) type = VarFilter.BYTES;
+        if (clazz == byte[].class || clazz == Bytes.class || clazz == ByteBuffer.class) type = VarFilter.BYTES;
         if (clazz == char[].class || clazz == String.class) type = VarFilter.STRING;
         if (clazz == List.class) {
             type = VarFilter.LIST;
@@ -278,7 +328,7 @@ public record Parameters(ParameterType[] types, Class<?>[] classes, boolean isPa
             if (hasAnnotation(annotations, Primative.class)) filter = VarGroup.PRIMITIVE;
             if (hasAnnotation(annotations, Number.class)) filter = VarGroup.NUMBER;
         }
-        if (clazz == Tuple.class) {
+        if (clazz == Tuple.class || clazz.isAssignableFrom(IArguments.class)) {
             type = allowTuple ? VarFilter.TUPLE : VarFilter.LIST;
             depth++;
             filter = VarGroup.ANY;

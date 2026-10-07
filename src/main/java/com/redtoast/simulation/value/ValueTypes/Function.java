@@ -35,6 +35,7 @@ public abstract class Function{
         name=Name;
         this.userGenerated = userGenerated;
     }
+    @Deprecated
     public abstract Value call(Value<?>[] parameters);
     public Value invoke(Value<?>[] parameters){
         return call(parameters);

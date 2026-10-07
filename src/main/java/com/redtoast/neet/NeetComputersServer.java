@@ -1,5 +1,6 @@
 package com.redtoast.neet;
 
+import com.redtoast.Compat.MainThreadTicket;
 import com.redtoast.items.*;
 import com.redtoast.simulation.RuntimeThread;
 import dev.ryanhcode.sable.companion.SableCompanion;
@@ -95,7 +96,9 @@ import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Hashtable;
 import java.util.LinkedList;
+import java.util.UUID;
 
 public class NeetComputersServer implements ModInitializer {
 
@@ -115,6 +118,7 @@ public class NeetComputersServer implements ModInitializer {
 	public static final ComponentType<Boolean> BOOTABLE_COMPONENT = Registry.register(Registries.DATA_COMPONENT_TYPE, Identifier.of("neetcomputers", "bootable"), ComponentType.<Boolean>builder().codec(Codec.BOOL).build());
 	public static final TransitiveSingleRecipe.Serializer TRANSITIVE_SINGLE_SERIALIZER = Registry.register(Registries.RECIPE_SERIALIZER, Identifier.of("neetcomputers", "transitive_single"), new TransitiveSingleRecipe.Serializer());
 	public static final FromDiskRecipe.Serializer OPTIONAL_DISK_SERIALIZER = Registry.register(Registries.RECIPE_SERIALIZER, Identifier.of("neetcomputers", "transfer_disk"), new FromDiskRecipe.Serializer());
+	public static final Hashtable<UUID, MainThreadTicket> mainThreadTicketTable = new Hashtable<>();
 	private static int nextPointer = -1;
 	public static boolean DO_LOGGING = false;
 
@@ -199,6 +203,11 @@ public class NeetComputersServer implements ModInitializer {
 				timeBenchMark = System.currentTimeMillis();
 			}
 			AccessPointBlockEntity.moveStacks();
+			if ((boolean) ConfigLoader.getServerConfig("cct-compatibility")) {
+				mainThreadTicketTable.forEach((uuid, ticket) -> {
+					if (!ticket.isComplete()) ticket.call();
+				});
+			}
 		});
 		ServerLifecycleEvents.AFTER_SAVE.register((server,a,b) -> {
 			File file = worldPath.resolve("neetcomputers/pipes.bin").toFile();
