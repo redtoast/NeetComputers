@@ -22,30 +22,23 @@ public class RuntimeThread extends Thread {
 
     @Override
     public void run(){
-        if (!this.isInterrupted() && runtime != null) {
-            threads.add(this);
-            try{
-                while (block.get(3, TimeUnit.SECONDS) != 1) {
-                    if (this.isInterrupted()) {
-                        break;
-                    }
-                    if (runtime.wantsToTick()) {
-                        runtime.instructTick(false);
-                        runtime.tick();
-                    }
+        threads.add(this);
+        try{
+            while (!this.isInterrupted() && block.get(3, TimeUnit.SECONDS) != 1) {
+                if (runtime.wantsToTick()) {
+                    runtime.instructTick(false);
+                    runtime.tick();
                 }
-            } catch (ExecutionException | InterruptedException e) {
-                throw new RuntimeException(e);
-            } catch (TimeoutException e) {
-                if (!runtime.isDead() && !runtime.isInTick()) {
-                    runtime.getThread().kill("Runtime timed out");
-                }
-                LangThread.error("Thread for computer "+runtime.getParent().getUuid()+" timed out!");
-                threads.remove(this);
             }
-        } else {
-            throw new RuntimeException("Runtime held onto thread too long!");
+        } catch (ExecutionException | InterruptedException e) {
+            throw new RuntimeException(e);
+        } catch (TimeoutException e) {
+            if (!runtime.isDead() && !runtime.isInTick()) {
+                runtime.getThread().kill("Runtime timed out");
+            }
+            LangThread.error("Thread for computer "+runtime.getParent().getUuid()+" timed out!");
         }
+        threads.remove(this);
     }
 
 

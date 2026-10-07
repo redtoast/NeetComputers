@@ -98,8 +98,10 @@ public class Runtime {
     }
 
     public void releaseManagementThread() {
-        management.kill();
-        management = null;
+        if (management != null) {
+            management.kill();
+            management = null;
+        }
     }
 
     public void renewManagementThread() {
