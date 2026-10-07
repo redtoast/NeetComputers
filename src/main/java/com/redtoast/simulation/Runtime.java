@@ -72,6 +72,8 @@ public class Runtime {
                 parent.crash("Unknown failure during boot (check logs)");
             }
             kill=true;
+            management.kill();
+            management = null;
         }
     }
 
@@ -118,6 +120,7 @@ public class Runtime {
         if (!kill) {
             if (thread == null) {
                 kill = true;
+                releaseManagementThread();
                 return;
             }
             if (thread.isAlive()) {
@@ -132,10 +135,8 @@ public class Runtime {
                     errorMessage = thread.getErrorMessage();
                     if (errorMessage != null) errorMessage = errorMessage.replaceAll("\t", "    ");
                     thread = null;
+                    releaseManagementThread();
                 }
-            }
-            if (thread == null) {
-                kill = true;
             }
         }
         if (shouldDie()){
@@ -144,8 +145,10 @@ public class Runtime {
             }else{
                 parent.crash(errorMessage);
             }
+            releaseManagementThread();
         } else if (errorMessage!=null) {
             parent.crash(errorMessage);
+            releaseManagementThread();
         }
     }
 

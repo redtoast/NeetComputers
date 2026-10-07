@@ -458,7 +458,7 @@ public abstract class Computer implements BinaryGraphicsProvider {
         if ((state == ComputerState.OFF || state == ComputerState.CRASHED) && runtime!=null) {
             internetManager.reset();
             eventManager.reset();
-            if (runtime.getManagementThread()!=null) runtime.getManagementThread().kill();
+            if (runtime.getManagementThread()!=null) runtime.releaseManagementThread();
             runtime=null;
             save = true;
         }

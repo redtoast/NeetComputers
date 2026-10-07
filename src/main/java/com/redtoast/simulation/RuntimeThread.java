@@ -41,6 +41,7 @@ public class RuntimeThread extends Thread {
         }
     }
 
+
     public Runtime getRuntime() {
         return runtime;
     }
@@ -54,6 +55,7 @@ public class RuntimeThread extends Thread {
     }
 
     public void kill() {
+        super.interrupt();
         block.complete(1);
         threads.remove(this);
     }
