@@ -12,14 +12,14 @@ import java.io.InputStream;
 import java.util.LinkedList;
 
 public class DataFilepath implements Filepath {
-    private final int pointer;
+    private final String pointer;
     private final String path;
     private String relPath;
     private final DiskSystem fs;
     private final boolean invalid;
     private final DataNode node;
 
-    public DataFilepath(int pointer, String path, DiskSystem system) {
+    public DataFilepath(String pointer, String path, DiskSystem system) {
         this.pointer = pointer;
         this.path = FileHelper.normalize(path);
         relPath = FileHelper.deAbsolutize(this.path).replace('\\', '/');
@@ -88,8 +88,7 @@ public class DataFilepath implements Filepath {
             throw new IOException("Invalid file path");
         if (!exists() || node.isDirectory())
             return null;
-        BufferedReader reader = NeetComputersServer.datahandling.getResource(
-                Identifier.of("neetcomputers", "neet/hard_addresses/" + -pointer + relPath)).get().getReader();
+        BufferedReader reader = DataNode.getNode(pointer, relPath).getTextReader();
 
         StringBuilder buffer = new StringBuilder();
         String line;
@@ -125,10 +124,7 @@ public class DataFilepath implements Filepath {
             throw new IOException("Invalid file path");
         if (!exists() || node.isDirectory())
             return null;
-        InputStream reader = NeetComputersServer.datahandling
-                .getResource(Identifier.of("neetcomputers", "neet/hard_addresses/" + -pointer + relPath)).get()
-                .getInputStream();
-        return reader.readAllBytes();
+        return DataNode.getNode(pointer, relPath).getInputStream().readAllBytes();
     }
 
     @Override

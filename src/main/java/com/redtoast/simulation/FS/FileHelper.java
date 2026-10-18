@@ -8,18 +8,14 @@ public class FileHelper {
         if (validatePathStatic(normalizedPath)){
             String[] components = normalizedPath.split(":");
             if (fs.partitionExists(components[0])){
-                if (isSourceHardAddress(fs.getPartition(components[0]).source())){
-                    Partition partition = fs.getPartition(components[0]);
-                    if (path.toLowerCase().equals(path)){
-                        DataFilepath dataFilepath = new DataFilepath(Integer.valueOf(partition.source()), normalizedPath, fs);
-                        if (partition.readOnly()){
-                            return dataFilepath;
-                        }else{
-                            RealFilepath realFilepath = new RealFilepath(fs.basePath.resolve(components[0]), normalizedPath, fs);
-                            return new LayeredFilepath(realFilepath, dataFilepath, fs);
-                        }
+                Partition partition = fs.getPartition(components[0]);
+                if (path.toLowerCase().equals(path)){
+                    DataFilepath dataFilepath = new DataFilepath(partition.source(), normalizedPath, fs);
+                    if (partition.readOnly()){
+                        return dataFilepath;
                     }else{
-                        return new RealFilepath(fs.basePath.resolve(components[0]), normalizedPath, fs);
+                        RealFilepath realFilepath = new RealFilepath(fs.basePath.resolve(components[0]), normalizedPath, fs);
+                        return new LayeredFilepath(realFilepath, dataFilepath, fs);
                     }
                 }else{
                     return new RealFilepath(fs.basePath.resolve(components[0]), normalizedPath, fs);
@@ -72,10 +68,6 @@ public class FileHelper {
         path = path.replace('\\', '/');
         if (path.charAt(path.length()-1)!='/') path += '/';
         return path.matches("^([a-zA-Z]+\\:\\/?)([a-zA-Z_\\-\\s0-9\\.]*[a-zA-Z_\\-\\s0-9]\\/)*$");
-    }
-
-    public static boolean isSourceHardAddress(int source){
-        return source < 0;
     }
 
     public static OpeningMode getMode(String mode){

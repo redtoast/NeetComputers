@@ -54,7 +54,7 @@ public class DiskTable {
             String path = partobject.get("path").getAsString();
             boolean readonly = false;
             boolean hidden = false;
-            int source = 0;
+            String source = "";
 
             if (partobject.has("readonly") && !partobject.get("readonly").isJsonPrimitive() || !partobject.getAsJsonPrimitive("readonly").isBoolean()){
                 throw new DiskError("Build config expected 'readonly' boolean, got "+partobject.get("readonly"));
@@ -72,11 +72,19 @@ public class DiskTable {
                 throw new DiskError("Build config expected 'source' String/hard-address, got "+partobject.get("source"));
             }else if(partobject.has("source")){
                 if (partobject.getAsJsonPrimitive("source").isNumber()){
-                    if (partobject.getAsJsonPrimitive("source").getAsInt()>0){
-                        throw new DiskError("Build config expected 'source' negative address, got "+partobject.get("source"));
-                    }
+                    int number = partobject.getAsJsonPrimitive("source").getAsInt();
+                    /*for legacy pre 0.5.6 source values*/
+                    source = switch (number) {
+                        case -1 -> "neetos";
+                        case -797 -> "meowintosh";
+                        case -6661 -> "xes_bios";
+                        case -6662 -> "xes_xes";
+                        case -6663 -> "xes_system";
+                        default -> throw new DiskError("Build config tried to convert legacy address, got "+partobject.get("source"));
+                    };
+                }else{
+                    source = partobject.getAsJsonPrimitive("source").getAsString();
                 }
-                source = partobject.getAsJsonPrimitive("source").getAsInt();
             }
 
             partitions.add(new Partition(path, readonly, hidden, source));
@@ -109,7 +117,7 @@ public class DiskTable {
         for (Partition partition : this.partitions) {
             JsonObject partitionObj = new JsonObject();
             partitionObj.addProperty("path", partition.path());
-            if (partition.source()!=0) partitionObj.addProperty("source", Integer.valueOf(partition.source()));
+            if (partition.source().isEmpty()) partitionObj.addProperty("source", partition.source());
             partitionObj.addProperty("readonly", partition.readOnly());
             partitionObj.addProperty("hidden", partition.hidden());
             partitions.add(partitionObj);

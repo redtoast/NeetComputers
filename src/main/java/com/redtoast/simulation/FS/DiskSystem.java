@@ -145,7 +145,7 @@ public class DiskSystem implements GenericSystem {
         if (!marker) return false;
         if (partitionExists(name)) return false;
         basePath.resolve(name).toFile().mkdir();
-        build.partitions.add(new Partition(name, false, false, 0));
+        build.partitions.add(new Partition(name, false, false, ""));
         saveBuild();
         return true;
     }

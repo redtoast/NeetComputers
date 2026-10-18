@@ -68,6 +68,10 @@ public class DiskManager {
         return arr;
     }
 
+    public boolean diskExists(int disk) {
+        return disks.containsKey(disk);
+    }
+
     public void update(){
         for (Map.Entry<Integer, GenericSystem> entry : disks.entrySet()) entry.getValue().update();
     }

@@ -1,15 +1,19 @@
 package com.redtoast.simulation.FS;
 
 import com.redtoast.neet.NeetComputersServer;
+import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.*;
 
-public record DataNode(boolean isDirectory, String name, String path, DataNode[] nodes) {
+public record DataNode(String address, boolean isDirectory, String name, String path, DataNode[] nodes) {
     private static final Logger logger = LoggerFactory.getLogger("Neetcomputers-datascanning");
-    public static Map<Integer, DataNode[]> nodeTree = null;
+    public static Map<String, DataNode[]> nodeTree = null;
 
     public String[] getChildren() {
         String[] children = new String[nodes.length];
@@ -24,11 +28,29 @@ public record DataNode(boolean isDirectory, String name, String path, DataNode[]
         return children.toArray(new String[] {});
     }
 
-    public static @Nullable DataNode getNode(int address, String path) {
+    public BufferedReader getTextReader() {
+        try {
+            return NeetComputersServer.datahandling.getResource(
+                    Identifier.of("neetcomputers", "neet/hard_addresses/" + address + "/" + path)).get().getReader();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public InputStream getInputStream() {
+        try {
+            return NeetComputersServer.datahandling.getResource(
+                    Identifier.of("neetcomputers", "neet/hard_addresses/" + address + "/" + path)).get().getInputStream();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static @Nullable DataNode getNode(String address, String path) {
         assert nodeTree != null;
         if (!nodeTree.containsKey(address)) return null;
         if (path.isEmpty()) {
-            return new DataNode(true, "", "/", nodeTree.get(address));
+            return new DataNode(address, true, "", "/", nodeTree.get(address));
         }
         DataNode[] space = nodeTree.get(address);
         String[] parts = path.replaceFirst("[/\\\\]$","").split("[/\\\\]");
@@ -48,20 +70,20 @@ public record DataNode(boolean isDirectory, String name, String path, DataNode[]
         return null;
     }
 
-    private record DataConstructorNode(String name, List<DataConstructorNode> nodes){
+    private record DataConstructorNode(String address, String name, List<DataConstructorNode> nodes){
         DataNode process(String prefix){
             String path = prefix + name;
             DataNode[] subNodes = new DataNode[nodes.size()];
             for (int i = 0; i < subNodes.length; i++) {
                 subNodes[i] = nodes.get(i).process(path+'/');
             }
-            return new DataNode(!nodes.isEmpty(), name, path, subNodes);
+            return new DataNode(address, !nodes.isEmpty(), name, path, subNodes);
         }
     }
 
-    private static DataConstructorNode spaceGet(List<DataConstructorNode> space, String index) {
+    private static DataConstructorNode spaceGet(String address, List<DataConstructorNode> space, String index) {
         for (DataConstructorNode node : space) if (node.name().equals(index)) return node;
-        space.add(new DataConstructorNode(index, new LinkedList<>()));
+        space.add(new DataConstructorNode(address, index, new LinkedList<>()));
         return space.getLast();
     }
 
@@ -72,28 +94,17 @@ public record DataNode(boolean isDirectory, String name, String path, DataNode[]
             if (!table.containsKey(parts[2])) table.put(parts[2], new ArrayList<>());
             List<DataConstructorNode> space = table.get(parts[2]);
             for (int i = 3; i < parts.length; i++){
-                space = spaceGet(space, parts[i]).nodes();
+                space = spaceGet(parts[2], space, parts[i]).nodes();
             }
             return true;
         });
-        Hashtable<Integer, DataNode[]> product = new Hashtable<>();
+        Hashtable<String, DataNode[]> product = new Hashtable<>();
         table.forEach((key, nodes) -> {
-            int id;
-            try {
-                id = -Integer.parseInt(key);
-                if (id>=0) {
-                    if (NeetComputersServer.DO_LOGGING) logger.warn("Invalid id number '{}'", key);
-                    return;
-                }
-            }catch (NumberFormatException ignored) {
-                if (NeetComputersServer.DO_LOGGING) logger.warn("Non-address '{}' found in address folder", key);
-                return;
-            }
             DataNode[] subNodes = new DataNode[nodes.size()];
             for (int i = 0; i < subNodes.length; i++) {
                 subNodes[i] = nodes.get(i).process("");
             }
-            product.put(id, subNodes);
+            product.put(key, subNodes);
         });
         nodeTree = Map.copyOf(product);
     }

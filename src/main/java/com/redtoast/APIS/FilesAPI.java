@@ -23,7 +23,7 @@ public class FilesAPI implements API {
 
     public GenericSystem getDisk(Integer disk) {
         if (disk==null) return diskManager.getDisk(0);
-        if (disk < 0 || disk >= diskManager.size()) throw new ExposedError("Disk not found");
+        if (!diskManager.diskExists(disk)) throw new ExposedError("Disk not found");
         return diskManager.getDisk(disk);
     }
 
@@ -138,6 +138,11 @@ public class FilesAPI implements API {
     public String getDiskID(int disk) {
         GenericSystem diskSystem = getDisk(disk);
         return diskSystem.getUuid().toString();
+    }
+
+    @Exposed
+    public boolean diskExists(int disk) {
+        return diskManager.diskExists(disk);
     }
 
     @Exposed
