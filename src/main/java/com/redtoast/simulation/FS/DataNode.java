@@ -2,9 +2,10 @@ package com.redtoast.simulation.FS;
 
 import com.redtoast.neet.NeetComputersServer;
 import net.minecraft.util.Identifier;
+import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -12,7 +13,6 @@ import java.io.InputStream;
 import java.util.*;
 
 public record DataNode(String address, boolean isDirectory, String name, String path, DataNode[] nodes) {
-    private static final Logger logger = LoggerFactory.getLogger("Neetcomputers-datascanning");
     public static Map<String, DataNode[]> nodeTree = null;
 
     public String[] getChildren() {
@@ -28,19 +28,47 @@ public record DataNode(String address, boolean isDirectory, String name, String 
         return children.toArray(new String[] {});
     }
 
-    public BufferedReader getTextReader() {
+    public String getText() {
+//        try {
+//            return NeetComputersServer.datahandling.getResource(
+//                    Identifier.of("neetcomputers", "neet/hard_addresses/" + address + "/" + path)).get().getReader();
+//        } catch (IOException e) {
+//            throw new RuntimeException(e);
+//        }
         try {
-            return NeetComputersServer.datahandling.getResource(
-                    Identifier.of("neetcomputers", "neet/hard_addresses/" + address + "/" + path)).get().getReader();
+            TarArchiveInputStream archive = new TarArchiveInputStream(NeetComputersServer.datahandling.getResource(Identifier.of("neetcomputers", "neet/hard_addresses/"+address)).get().getInputStream());
+            TarArchiveEntry ze;
+            while ((ze = archive.getNextEntry()) != null) {
+                if (ze.getName().equalsIgnoreCase(path)) {
+                    byte[] buffer = new byte[(int) ze.getSize()];
+                    archive.read(buffer, 0, (int) ze.getSize());
+                    return StringUtils.toEncodedString(buffer, null);
+                }
+            }
+            throw new RuntimeException("Cant find path ("+address+':'+path+')');
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public InputStream getInputStream() {
+    public byte[] getBytes() {
+//        try {
+//            return NeetComputersServer.datahandling.getResource(
+//                    Identifier.of("neetcomputers", "neet/hard_addresses/" + address + "/" + path)).get().getInputStream();
+//        } catch (IOException e) {
+//            throw new RuntimeException(e);
+//        }
         try {
-            return NeetComputersServer.datahandling.getResource(
-                    Identifier.of("neetcomputers", "neet/hard_addresses/" + address + "/" + path)).get().getInputStream();
+            TarArchiveInputStream archive = new TarArchiveInputStream(NeetComputersServer.datahandling.getResource(Identifier.of("neetcomputers", "neet/hard_addresses/"+address)).get().getInputStream());
+            TarArchiveEntry ze;
+            while ((ze = archive.getNextEntry()) != null) {
+                if (ze.getName().equalsIgnoreCase(path)) {
+                    byte[] buffer = new byte[(int) ze.getSize()];
+                    archive.read(buffer, 0, (int) ze.getSize());
+                    return buffer;
+                }
+            }
+            throw new RuntimeException("Cant find path ("+address+':'+path+')');
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -58,7 +86,7 @@ public record DataNode(String address, boolean isDirectory, String name, String 
         for (int i = startingSlash ? 1 : 0; i < parts.length; i++) {
             DataNode found = null;
             for (DataNode node : space) {
-                if (node.name().equals(parts[i])) {
+                if (node.name().equalsIgnoreCase(parts[i])) {
                     found = node;
                     break;
                 }
@@ -82,7 +110,9 @@ public record DataNode(String address, boolean isDirectory, String name, String 
     }
 
     private static DataConstructorNode spaceGet(String address, List<DataConstructorNode> space, String index) {
-        for (DataConstructorNode node : space) if (node.name().equals(index)) return node;
+        for (DataConstructorNode node : space)
+            if (node.name().equals(index))
+                return node;
         space.add(new DataConstructorNode(address, index, new LinkedList<>()));
         return space.getLast();
     }
@@ -90,12 +120,40 @@ public record DataNode(String address, boolean isDirectory, String name, String 
     public static void loadData(){
         Hashtable<String, List<DataConstructorNode>> table = new Hashtable<>();
         NeetComputersServer.datahandling.findResources("neet/hard_addresses", arg -> {
-            String[] parts = arg.toString().split("/");
-            if (!table.containsKey(parts[2])) table.put(parts[2], new ArrayList<>());
-            List<DataConstructorNode> space = table.get(parts[2]);
-            for (int i = 3; i < parts.length; i++){
-                space = spaceGet(parts[2], space, parts[i]).nodes();
+            if (arg.toString().endsWith(".tar")) {
+                String address = arg.toString().replaceFirst("neetcomputers:neet/hard_addresses/", "");
+                TarArchiveInputStream archive;
+                try {
+                    archive = new TarArchiveInputStream(NeetComputersServer.datahandling.getResource(Identifier.of("neetcomputers", "neet/hard_addresses/"+address)).get().getInputStream());
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+                List<DataConstructorNode> space = new ArrayList<>();
+                try{
+                    TarArchiveEntry ze;
+                    while ((ze = archive.getNextEntry()) != null) {
+                        String path = ze.getName();
+                        if (!ze.isDirectory()) {
+                            String[] parts = path.split("/");
+                            List<DataConstructorNode> subSpace = space;
+                            for (int i = 0; i < parts.length; i++){
+                                //space = spaceGet(address, space, parts[i]).nodes();
+                                subSpace = spaceGet(address, subSpace, parts[i]).nodes();
+                            }
+                        }
+                    }
+                    archive.close();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+                table.put(address, space);
             }
+//            String[] parts = arg.toString().split("/");
+//            if (!table.containsKey(parts[2])) table.put(parts[2], new ArrayList<>());
+//            List<DataConstructorNode> space = table.get(parts[2]);
+//            for (int i = 3; i < parts.length; i++){
+//                space = spaceGet(parts[2], space, parts[i]).nodes();
+//            }
             return true;
         });
         Hashtable<String, DataNode[]> product = new Hashtable<>();
@@ -107,5 +165,18 @@ public record DataNode(String address, boolean isDirectory, String name, String 
             product.put(key, subNodes);
         });
         nodeTree = Map.copyOf(product);
+//        try{
+//            TarArchiveInputStream zis = new TarArchiveInputStream(NeetComputersServer.datahandling.getResource(
+//                    Identifier.of("neetcomputers", "neet/hard_addresses/neetos.tar")).get().getInputStream());
+//
+//            TarArchiveEntry ze;
+//
+//            while ((ze = zis.getNextEntry()) != null) {
+//
+//                System.out.format("File: "+ze.getName());
+//            }
+//        } catch (IOException e) {
+//            throw new RuntimeException(e);
+//        }
     }
 }

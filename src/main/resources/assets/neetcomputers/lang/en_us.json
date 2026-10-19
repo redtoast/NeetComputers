@@ -23,6 +23,8 @@
   "item.neetcomputers.disk": "Disk",
   "item.neetcomputers.hard_drive": "Hard Drive",
   "item.neetcomputers.neetos_disk": "Neet OS Disk",
+  "item.neetcomputers.xesos_disk": "Xes OS Disk",
+  "item.neetcomputers.meowintosh_disk": "Meowintosh OS Disk",
   "item.neetcomputers.micro_chip": "Micro Chip",
   "itemGroup.neetcomputers.main_item_group": "Neet Computers",
   "tag.item.neetcomputers.disks": "Disks"

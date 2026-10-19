@@ -72,16 +72,12 @@ public class DiskTable {
                 throw new DiskError("Build config expected 'source' String/hard-address, got "+partobject.get("source"));
             }else if(partobject.has("source")){
                 if (partobject.getAsJsonPrimitive("source").isNumber()){
-                    int number = partobject.getAsJsonPrimitive("source").getAsInt();
                     /*for legacy pre 0.5.6 source values*/
-                    source = switch (number) {
-                        case -1 -> "neetos";
-                        case -797 -> "meowintosh";
-                        case -6661 -> "xes_bios";
-                        case -6662 -> "xes_xes";
-                        case -6663 -> "xes_system";
-                        default -> throw new DiskError("Build config tried to convert legacy address, got "+partobject.get("source"));
-                    };
+                    if (partobject.getAsJsonPrimitive("source").getAsInt() == -1) {
+                        source = "neetos.tar";
+                    }else{
+                        throw new DiskError("Build config tried to convert legacy address, got "+partobject.get("source"));
+                    }
                 }else{
                     source = partobject.getAsJsonPrimitive("source").getAsString();
                 }

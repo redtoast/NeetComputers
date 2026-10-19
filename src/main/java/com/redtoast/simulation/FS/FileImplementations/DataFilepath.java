@@ -88,20 +88,7 @@ public class DataFilepath implements Filepath {
             throw new IOException("Invalid file path");
         if (!exists() || node.isDirectory())
             return null;
-        BufferedReader reader = DataNode.getNode(pointer, relPath).getTextReader();
-
-        StringBuilder buffer = new StringBuilder();
-        String line;
-        boolean first = true;
-        while ((line = reader.readLine()) != null) {
-            if (!first) {
-                buffer.append('\n');
-            }
-            buffer.append(line);
-            first = false;
-        }
-        reader.close();
-        return buffer.toString();
+        return node.getText();
     }
 
     @Override
@@ -124,7 +111,7 @@ public class DataFilepath implements Filepath {
             throw new IOException("Invalid file path");
         if (!exists() || node.isDirectory())
             return null;
-        return DataNode.getNode(pointer, relPath).getInputStream().readAllBytes();
+        return node.getBytes();
     }
 
     @Override

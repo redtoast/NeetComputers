@@ -1,0 +1,22 @@
+{
+    "entrypoint" : "system:startup.lua",
+    "language" : "Lua",
+    "partitions" : [
+        {
+            "path" : "bios",
+            "readonly" : false,
+            "hidden" : false
+        },
+        {
+            "path" : "system",
+            "source" : "meowintosh.tar",
+            "readonly" : false,
+            "hidden" : false
+        },
+        {
+            "path" : "user",
+            "readonly" : false,
+            "hidden" : false
+        }
+    ]
+}

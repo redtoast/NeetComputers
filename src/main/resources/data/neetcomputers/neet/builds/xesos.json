@@ -1,0 +1,24 @@
+{
+    "entrypoint" : "bios:bios.lua",
+    "language" : "Lua",
+    "partitions" : [
+        {
+            "path" : "bios",
+            "source" : "xesns/bios.tar",
+            "readonly" : false,
+            "hidden" : false
+        },
+        {
+            "path" : "xes",
+            "source" : "xesns/xes.tar",
+            "readonly" : false,
+            "hidden" : false
+        },
+        {
+            "path" : "system",
+            "source" : "xesns/system.tar",
+            "readonly" : false,
+            "hidden" : false
+        }
+    ]
+}

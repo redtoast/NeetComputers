@@ -300,6 +300,14 @@ public class NeetComputersServer implements ModInitializer {
 		BulkRegistry.register("neetos_disk", neetosdisk);
 		BulkRegistry.register(neetosdisk, group);
 
+//		Item xesosdisk = new Disk(new Item.Settings().maxCount(1).component(TEMPLATE_COMPONENT, "xesos").component(POINTER_COMPONENT, 0).component(BOOTABLE_COMPONENT, true), "item.neetcomputers.xesos_disk");
+//		BulkRegistry.register("xesos_disk", xesosdisk);
+//		BulkRegistry.register(xesosdisk, group);
+//
+//		Item meowintoshdisk = new Disk(new Item.Settings().maxCount(1).component(TEMPLATE_COMPONENT, "meowintosh").component(POINTER_COMPONENT, 0).component(BOOTABLE_COMPONENT, true), "item.neetcomputers.meowintosh_disk");
+//		BulkRegistry.register("meowintosh_disk", meowintoshdisk);
+//		BulkRegistry.register(meowintoshdisk, group);
+
 		Item microChip = new Item(new Item.Settings().maxCount(64));
 		BulkRegistry.register("micro_chip", microChip);
 		BulkRegistry.register(microChip, group);

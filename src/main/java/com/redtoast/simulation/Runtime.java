@@ -72,7 +72,7 @@ public class Runtime {
                 parent.crash("Unknown failure during boot (check logs)");
             }
             kill=true;
-            management.kill();
+            if (management!=null) management.kill();
             management = null;
         }
     }

@@ -4,7 +4,7 @@
     "partitions" : [
         {
             "path" : "bios",
-            "source" : -1,
+            "source" : "neetos.tar",
             "readonly" : false,
             "hidden" : false
         }
