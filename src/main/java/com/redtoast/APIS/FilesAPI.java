@@ -135,7 +135,7 @@ public class FilesAPI implements API {
     }
 
     @Exposed
-    public String getDiskID(int disk) {
+    public String getDiskReaderID(int disk) {
         GenericSystem diskSystem = getDisk(disk);
         return diskSystem.getUuid().toString();
     }

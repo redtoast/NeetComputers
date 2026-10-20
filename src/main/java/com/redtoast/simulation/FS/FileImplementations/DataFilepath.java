@@ -1,26 +1,19 @@
 package com.redtoast.simulation.FS.FileImplementations;
 
-import com.redtoast.neet.NeetComputersServer;
 import com.redtoast.simulation.FS.DataNode;
 import com.redtoast.simulation.FS.FileHelper;
 import com.redtoast.simulation.FS.DiskSystem;
-import net.minecraft.util.Identifier;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.util.LinkedList;
 
 public class DataFilepath implements Filepath {
-    private final String pointer;
     private final String path;
     private String relPath;
     private final DiskSystem fs;
     private final boolean invalid;
-    private final DataNode node;
+    public final DataNode node;
 
     public DataFilepath(String pointer, String path, DiskSystem system) {
-        this.pointer = pointer;
         this.path = FileHelper.normalize(path);
         relPath = FileHelper.deAbsolutize(this.path).replace('\\', '/');
         if (relPath.endsWith("/")) {
@@ -28,7 +21,7 @@ public class DataFilepath implements Filepath {
         }
         invalid = !FileHelper.validatePathStatic(this.path);
         fs = system;
-        node = DataNode.getNode(pointer, relPath);
+        node = invalid ? null : DataNode.getNode(pointer, relPath);
     }
 
     @Override

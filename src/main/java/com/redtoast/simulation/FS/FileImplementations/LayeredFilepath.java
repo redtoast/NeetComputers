@@ -7,10 +7,10 @@ import java.util.Arrays;
 import java.util.LinkedList;
 
 public class LayeredFilepath implements Filepath {
-    private Filepath mainFilepath;
-    private Filepath layoverFilepath;
-    private DiskSystem fs;
-    public LayeredFilepath(Filepath mainFilepath, Filepath layoverFilepath, DiskSystem fs) {
+    private final RealFilepath mainFilepath;
+    private final DataFilepath layoverFilepath;
+    private final DiskSystem fs;
+    public LayeredFilepath(RealFilepath mainFilepath, DataFilepath layoverFilepath, DiskSystem fs) {
         this.layoverFilepath = layoverFilepath;
         this.mainFilepath = mainFilepath;
         this.fs = fs;
