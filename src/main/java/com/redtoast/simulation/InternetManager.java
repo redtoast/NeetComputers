@@ -301,7 +301,7 @@ public class InternetManager {
         public void onOpen(WebSocket webSocket) {
             Runtime runtime = computer.getRuntime();
             eventManager.queueEvent(new EventGeneric("WebsocketOpened", Value.of(id),
-                    new Function(false, "send", Parameters.make(byte[].class, boolean.class)) {
+                    new Function(false, "send", ParameterBuilder.make(byte[].class, boolean.class)) {
                         @Override
                         public Value call(Value<?>[] parameters) {
                             Optional<String> check = getRules().canCast(parameters, runtime==null ? null : runtime.getThread().getLang());

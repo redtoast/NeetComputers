@@ -12,6 +12,7 @@ import com.redtoast.simulation.value.VarGroup;
 import com.redtoast.simulation.value.VarType;
 import dan200.computercraft.api.lua.Coerced;
 import dan200.computercraft.api.lua.IArguments;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
@@ -222,10 +223,7 @@ public record Parameters(ParameterType[] types, Class<?>[] classes, Class<?>[] w
                     type = (Class<?>) ((ParameterizedType) method.getGenericParameterTypes()[i]).getActualTypeArguments()[0];
                     Annotation[] nAnnotations = new Annotation[annotations.length+1];
                     System.arraycopy(annotations, 0, nAnnotations, 1, annotations.length);
-                    nAnnotations[0] = new CanBeNull(){
-                        @Override
-                        public Class<? extends Annotation> annotationType() {return CanBeNull.class;}
-                    };
+                    nAnnotations[0] = ParameterBuilder.CANBENULL;
                     annotations = nAnnotations;
                     wrappers[i] = Optional.class;
                 }else if (type.isAssignableFrom(Coerced.class)) {
@@ -236,7 +234,7 @@ public record Parameters(ParameterType[] types, Class<?>[] classes, Class<?>[] w
                 classes[i] = type;
                 if (i == parameters.length-1) varargs = parameters[i].isVarArgs() && parameterTypes[i].depth>0 || parameterTypes[i].type==VarFilter.TUPLE;
             } catch (IllegalStateException ignored){
-                throw new IllegalArgumentException("Failed to recognize parameterErrors type "+parameters[i].getType().toString()+" at parameterErrors #"+i);
+                throw new IllegalArgumentException("Failed to recognize parameterErrors type "+parameters[i].getType().toString()+" at parameter #"+i);
             }
         }
         return new Parameters(parameterTypes, classes, wrappers, varargs);
@@ -271,21 +269,8 @@ public record Parameters(ParameterType[] types, Class<?>[] classes, Class<?>[] w
         };
     }
 
-    public static Parameters make(Class<?>... casts) {
-        ParameterType[] parameterTypes = new ParameterType[casts.length];
-        boolean varargs = false;
-        for (int i = 0; i < casts.length; i++) {
-            try{
-                parameterTypes[i] = configureList(inferType(casts[i], i == casts.length-1, 0, new Annotation[0]), false);
-                if (i == casts.length-1) varargs = parameterTypes[i].type==VarFilter.TUPLE;
-            } catch (IllegalStateException ignored){
-                throw new IllegalArgumentException("Failed to recognize parameterErrors type "+casts[i].toString()+" at parameterErrors #"+i);
-            }
-        }
-        return new Parameters(parameterTypes, casts, new Class[casts.length], varargs);
-    }
-
-    private static ParameterType configureList(ParameterType type, boolean tuple) {
+    @ApiStatus.Internal
+    static ParameterType configureList(ParameterType type, boolean tuple) {
         if (type.depth>0 && type.filter==VarFilter.NULL) {
             return new ParameterType(tuple ? VarFilter.TUPLE : VarFilter.LIST, type.type(), type.depth, type.annotations);
         }
@@ -310,7 +295,8 @@ public record Parameters(ParameterType[] types, Class<?>[] classes, Class<?>[] w
         return null;
     }
 
-    private static ParameterType inferType(Class<?> clazz, boolean allowTuple, int entryDepth, Annotation[] annotations) {
+    @ApiStatus.Internal
+    static ParameterType inferType(Class<?> clazz, boolean allowTuple, int entryDepth, Annotation[] annotations) {
         VarFilter type = VarFilter.NULL;
         int depth = entryDepth;
         VarGroup filter = VarGroup.NONE;

@@ -5,6 +5,7 @@ import com.redtoast.Connections.PeripheralProvider;
 import com.redtoast.Connections.PipeRenderSource;
 import com.redtoast.Connections.PipeType;
 import com.redtoast.neet.BulkRegistry;
+import com.redtoast.simulation.ParameterBuilder;
 import com.redtoast.simulation.Runtime;
 import com.redtoast.simulation.Parameters;
 import com.redtoast.simulation.value.Value;
@@ -23,7 +24,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 public class DynamicLightBlockEntity extends BlockEntity implements PeripheralProvider, PipeRenderSource {
-    private static final Parameters intrule = Parameters.make(int.class);
+    private static final Parameters intrule = ParameterBuilder.make(int.class);
     private static final Parameters empty = Parameters.empty();
     private UUID uuid = null;
     private String tag = null;

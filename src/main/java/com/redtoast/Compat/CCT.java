@@ -8,6 +8,8 @@ import dan200.computercraft.api.peripheral.IComputerAccess;
 import dan200.computercraft.api.peripheral.IPeripheral;
 import dan200.computercraft.api.peripheral.PeripheralLookup;
 import dan200.computercraft.api.peripheral.WorkMonitor;
+import dan200.computercraft.shared.peripheral.redstone.RedstoneRelayPeripheral;
+import dan200.computercraft.shared.peripheral.speaker.SpeakerPeripheral;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.NotNull;
@@ -15,18 +17,32 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.Map;
 import java.util.Random;
+import java.util.UUID;
 
 public class CCT {
     public static PeripheralProvider searchForCCT(BlockPos pos, World world, Computer computer){
         IPeripheral peripheral = PeripheralLookup.get().find(world, pos, null);
-        if (peripheral==null) return null;
-        return new WrappedPeripheral(peripheral, pos, computer.getRuntime(), (peripheral2) -> new ComputerWrapper(computer, peripheral2));
+        return switch (peripheral) {
+            case null -> null;
+            case SpeakerPeripheral speaker ->
+                    new SpeakerWrapper(speaker, UUID.nameUUIDFromBytes(Long.toOctalString(pos.asLong()).getBytes()));
+            case RedstoneRelayPeripheral relay ->
+                    new RedstoneRelayWrapper(relay, UUID.nameUUIDFromBytes(Long.toOctalString(pos.asLong()).getBytes()));
+            default ->
+                    new WrappedPeripheral(peripheral, pos, computer.getRuntime(), (peripheral2) -> new ComputerWrapper(computer, peripheral2));
+        };
     }
 
     public static PeripheralProvider searchForCCT(BlockPos pos, World world){
         IPeripheral peripheral = PeripheralLookup.get().find(world, pos, null);
-        if (peripheral==null) return null;
-        return new WrappedPeripheral(peripheral, pos, null, blankAccess::new);
+        return switch (peripheral) {
+            case null -> null;
+            case SpeakerPeripheral speaker ->
+                    new SpeakerWrapper(speaker, UUID.nameUUIDFromBytes(Long.toOctalString(pos.asLong()).getBytes()));
+            case RedstoneRelayPeripheral relay ->
+                    new RedstoneRelayWrapper(relay, UUID.nameUUIDFromBytes(Long.toOctalString(pos.asLong()).getBytes()));
+            default -> new WrappedPeripheral(peripheral, pos, null, blankAccess::new);
+        };
     }
 
     static class blankAccess implements IComputerAccess {
