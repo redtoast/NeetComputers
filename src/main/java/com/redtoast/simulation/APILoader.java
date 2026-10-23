@@ -153,7 +153,7 @@ public class APILoader {
                     }
                     long timeStarted = System.currentTimeMillis();
                     Context context = runtime!=null ? new Context(runtime, runtime.getThread().getLang()) : null;
-                    Object retun = method.invoke(obj, ruleset.cast(parameters));
+                    Object retun = method.invoke(obj, ruleset.cast(parameters, runtime));
                     if (context!=null) profilerFunction(timeStarted, funcname + ruleset, context);
                     return processReturn(retun);
                 }catch (InvocationTargetException e){

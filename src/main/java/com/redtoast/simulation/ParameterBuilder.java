@@ -18,6 +18,7 @@ public class ParameterBuilder {
     private final LinkedList<Class<?>> classes = new LinkedList<>();
     private boolean appendable = true;
     private boolean varargs = false;
+    private boolean includeRuntime = false;
 
     public ParameterBuilder(){}
 
@@ -43,9 +44,14 @@ public class ParameterBuilder {
         return this;
     }
 
+    public ParameterBuilder provideRuntime() {
+        includeRuntime = true;
+        return this;
+    }
+
     public Parameters build() {
         appendable = false;
-        return new Parameters(types.toArray(new ParameterType[0]), classes.toArray(new Class[0]), new Class[classes.size()], varargs);
+        return new Parameters(types.toArray(new ParameterType[0]), classes.toArray(new Class[0]), new Class[classes.size()], varargs, includeRuntime ? Runtime.class : null);
     }
 
     public static Parameters make(Class<?>... casts) {
@@ -59,6 +65,6 @@ public class ParameterBuilder {
                 throw new IllegalArgumentException("Failed to recognize parameterErrors type "+casts[i].toString()+" at parameterErrors #"+i);
             }
         }
-        return new Parameters(parameterTypes, casts, new Class[casts.length], varargs);
+        return new Parameters(parameterTypes, casts, new Class[casts.length], varargs, null);
     }
 }

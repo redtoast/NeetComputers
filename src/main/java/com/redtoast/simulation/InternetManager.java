@@ -310,7 +310,7 @@ public class InternetManager {
                                 eventManager.queueEvent(new EventGeneric("WebsocketSendFailure", Value.of("Outgoing buffer full, try again later")), EventLabel.NETWORK);
                                 return Value.NULL;
                             }
-                            Object[] args = getRules().cast(parameters);
+                            Object[] args = getRules().cast(parameters, runtime);
                             byte[] data = (byte[]) args[0];
                             queueRequest(new Request(data.length) {
                                 @Override

@@ -54,12 +54,12 @@ public class ComputerWrapper implements IComputerAccess {
 
     @Override
     public String getAttachmentName() {
-        return peripheral.getType()+"_1";
+        return peripheral!=null ? (peripheral.getType()+"_1") : "dont worry about it";
     }
 
     @Override
     public Map<String, IPeripheral> getAvailablePeripherals() {
-        return Map.of(getAttachmentName(), peripheral);
+        return peripheral!=null ? Map.of(getAttachmentName(), peripheral) : Map.of();
     }
 
     @Override

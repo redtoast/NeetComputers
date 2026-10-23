@@ -70,7 +70,7 @@ public class DynamicLightBlockEntity extends BlockEntity implements PeripheralPr
         if (Objects.equals(name, "setLuminance")){
             Optional<String> check = intrule.canCast(args, null);
             if (check.isPresent()) return Value.asError(check.get());
-            lightLevel = (Integer) intrule.cast(args)[0];
+            lightLevel = (Integer) intrule.cast(args, runtime)[0];
             return Value.NULL;
         }
         if (Objects.equals(name, "turnOff")){

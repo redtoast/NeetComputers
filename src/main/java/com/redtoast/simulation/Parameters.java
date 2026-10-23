@@ -1,6 +1,7 @@
 package com.redtoast.simulation;
 
 import com.google.gson.internal.Primitives;
+import com.redtoast.Compat.ComputerWrapper;
 import com.redtoast.simulation.annotations.*;
 import com.redtoast.simulation.annotations.Number;
 import com.redtoast.simulation.base.LanguageGeneric;
@@ -12,7 +13,9 @@ import com.redtoast.simulation.value.VarGroup;
 import com.redtoast.simulation.value.VarType;
 import dan200.computercraft.api.lua.Coerced;
 import dan200.computercraft.api.lua.IArguments;
+import dan200.computercraft.api.peripheral.IComputerAccess;
 import org.jetbrains.annotations.ApiStatus;
+import org.jetbrains.annotations.Nullable;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
@@ -24,9 +27,9 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
 
-public record Parameters(ParameterType[] types, Class<?>[] classes, Class<?>[] wrappers, boolean isPacked) {
-    private static final Parameters empty = new Parameters(new ParameterType[0], new Class[0], new Class[0], false);
-    private static final Parameters any = new Parameters(new ParameterType[]{new ParameterType(VarFilter.TUPLE, VarFilter.ANY, 1, new Annotation[0])}, new Class[]{Object[].class}, new Class[]{null}, true);
+public record Parameters(ParameterType[] types, Class<?>[] classes, Class<?>[] wrappers, boolean isPacked, Class<?> provideFirst) {
+    private static final Parameters empty = new Parameters(new ParameterType[0], new Class[0], new Class[0], false, null);
+    private static final Parameters any = new Parameters(new ParameterType[]{new ParameterType(VarFilter.TUPLE, VarFilter.ANY, 1, new Annotation[0])}, new Class[]{Object[].class}, new Class[]{null}, true, null);
 
     public record ParameterType(VarFilter type, VarFilter filter, int depth, Annotation[] annotations) {
         public boolean canCast(Value<?> value) {
@@ -89,22 +92,31 @@ public record Parameters(ParameterType[] types, Class<?>[] classes, Class<?>[] w
         }
     }
 
-    public Object[] cast(Value<?>[] values) {
-        Object[] array = new Object[types.length];
+    public Object[] cast(Value<?>[] values, @Nullable Runtime runtime) {
+        int special = provideFirst!=null ? 1 : 0;
+        Object[] array = new Object[types.length + special];
         if (isPacked) {
             Tuple varargs = new Tuple();
             int i = 0;
             int x = size()-1;
             for (; i < x; i++) {
-                array[i] = wrap(cast(values[i], classes[i], false, types[i].annotations()), wrappers[i]);
+                array[i + special] = wrap(cast(values[i], classes[i], false, types[i].annotations()), wrappers[i]);
             }
             for (; i < values.length; i++) {
                 varargs.add(values[i]);
             }
-            array[x] = wrap(cast(varargs.asValue(), classes[x], true, types[x].annotations()), wrappers[x]);
+            array[x + special] = wrap(cast(varargs.asValue(), classes[x], true, types[x].annotations()), wrappers[x]);
         }else{
             for (int i = 0; i < size(); i++) {
-                array[i] = wrap(cast(i >= values.length ? Value.NULL : values[i], classes[i], false, types[i].annotations()), wrappers[i]);
+                array[i + special] = wrap(cast(i >= values.length ? Value.NULL : values[i], classes[i], false, types[i].annotations()), wrappers[i]);
+            }
+        }
+        if (special!=0) {
+            if (provideFirst.isAssignableFrom(Runtime.class)) {
+                array[0] = runtime;
+            }
+            if (provideFirst.isAssignableFrom(IComputerAccess.class)) {
+                array[0] = new ComputerWrapper(runtime.getParent(), null);
             }
         }
         return array;
@@ -206,16 +218,17 @@ public record Parameters(ParameterType[] types, Class<?>[] classes, Class<?>[] w
                 throw new IllegalArgumentException("Failed to recognize parameterErrors type "+parameters[i].getType().toString()+" at parameterErrors #"+i);
             }
         }
-        return new Parameters(parameterTypes, classes, new Class[parameters.length], varargs);
+        return new Parameters(parameterTypes, classes, new Class[parameters.length], varargs, null);
     }
 
     public static Parameters deduceCCTParameters(Method method) {
         Parameter[] parameters = method.getParameters();
-        ParameterType[] parameterTypes = new ParameterType[parameters.length];
-        Class<?>[] classes = new Class[parameters.length];
-        Class<?>[] wrappers = new Class[parameters.length];
+        int specialMode = method.getParameters().length==0 ? 0 : method.getParameters()[0].getType().isAssignableFrom(IComputerAccess.class) ? 1 : 0;
+        ParameterType[] parameterTypes = new ParameterType[parameters.length - specialMode];
+        Class<?>[] classes = new Class[parameters.length - specialMode];
+        Class<?>[] wrappers = new Class[parameters.length - specialMode];
         boolean varargs = false;
-        for (int i = 0; i < parameters.length; i++) {
+        for (int i = specialMode; i < parameters.length; i++) {
             try{
                 Class<?> type = parameters[i].getType();
                 Annotation[] annotations = parameters[i].getDeclaredAnnotations();
@@ -225,19 +238,19 @@ public record Parameters(ParameterType[] types, Class<?>[] classes, Class<?>[] w
                     System.arraycopy(annotations, 0, nAnnotations, 1, annotations.length);
                     nAnnotations[0] = ParameterBuilder.CANBENULL;
                     annotations = nAnnotations;
-                    wrappers[i] = Optional.class;
+                    wrappers[i-specialMode] = Optional.class;
                 }else if (type.isAssignableFrom(Coerced.class)) {
                     type = (Class<?>) ((ParameterizedType) method.getGenericParameterTypes()[i]).getActualTypeArguments()[0];
-                    wrappers[i] = Coerced.class;
+                    wrappers[i-specialMode] = Coerced.class;
                 }
-                parameterTypes[i] = configureList(inferType(type, i == parameters.length-1, 0, annotations), parameters[i].isVarArgs());
-                classes[i] = type;
-                if (i == parameters.length-1) varargs = parameters[i].isVarArgs() && parameterTypes[i].depth>0 || parameterTypes[i].type==VarFilter.TUPLE;
+                parameterTypes[i-specialMode] = configureList(inferType(type, i == parameters.length-1, 0, annotations), parameters[i].isVarArgs());
+                classes[i-specialMode] = type;
+                if (i == parameters.length-1) varargs = parameters[i].isVarArgs() && parameterTypes[i-specialMode].depth>0 || parameterTypes[i-specialMode].type==VarFilter.TUPLE;
             } catch (IllegalStateException ignored){
                 throw new IllegalArgumentException("Failed to recognize parameterErrors type "+parameters[i].getType().toString()+" at parameter #"+i);
             }
         }
-        return new Parameters(parameterTypes, classes, wrappers, varargs);
+        return new Parameters(parameterTypes, classes, wrappers, varargs, specialMode==1 ? method.getParameters()[0].getType() : null);
     }
 
     public static Function attachSelectiveErrors(java.util.List<Function> unpatchedFunctions, String name, Runtime runtime) {
