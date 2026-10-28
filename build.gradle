@@ -47,8 +47,8 @@ dependencies {
 	// Fabric API. This is technically optional, but you probably want it anyway.
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
-	modCompileOnly("cc.tweaked:cc-tweaked-${project.minecraft_version}-fabric-api:1.117.1")
-	modImplementation("cc.tweaked:cc-tweaked-${project.minecraft_version}-fabric:1.117.1")
+	modImplementation("cc.tweaked:cc-tweaked-${project.minecraft_version}-fabric-api:1.117.1")
+	modCompileOnly("cc.tweaked:cc-tweaked-${project.minecraft_version}-fabric:1.117.1")
 	//modCompileOnly "me.shedaniel:RoughlyEnoughItems-api-fabric:14.0.699"
 	//modRuntimeOnly "me.shedaniel:RoughlyEnoughItems-fabric:14.0.699"
 	//modCompileOnly "me.shedaniel:RoughlyEnoughItems-default-plugin-fabric:14.0.699"
