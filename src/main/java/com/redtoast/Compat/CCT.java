@@ -8,26 +8,32 @@ import dan200.computercraft.api.peripheral.IComputerAccess;
 import dan200.computercraft.api.peripheral.IPeripheral;
 import dan200.computercraft.api.peripheral.PeripheralLookup;
 import dan200.computercraft.api.peripheral.WorkMonitor;
-import dan200.computercraft.shared.peripheral.redstone.RedstoneRelayPeripheral;
-import dan200.computercraft.shared.peripheral.speaker.SpeakerPeripheral;
+import dan200.computercraft.shared.peripheral.diskdrive.DiskDrivePeripheral;
+import dan200.computercraft.shared.peripheral.monitor.MonitorBlockEntity;
+import dan200.computercraft.shared.peripheral.monitor.MonitorPeripheral;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Direction;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.Nullable;
 
 import java.util.Map;
 import java.util.Random;
-import java.util.UUID;
+
+import static dan200.computercraft.impl.Peripherals.getGenericPeripheral;
 
 public class CCT {
     public static PeripheralProvider searchForCCT(BlockPos pos, World world, Computer computer){
-        IPeripheral peripheral = PeripheralLookup.get().find(world, pos, null);
+        IPeripheral peripheral = PeripheralLookup.get().find(world, pos, null);//getPeripheral(world, pos);
         return switch (peripheral) {
             case null -> null;
-            case SpeakerPeripheral speaker ->
-                    new SpeakerWrapper(speaker, UUID.nameUUIDFromBytes(Long.toOctalString(pos.asLong()).getBytes()));
-            case RedstoneRelayPeripheral relay ->
-                    new RedstoneRelayWrapper(relay, UUID.nameUUIDFromBytes(Long.toOctalString(pos.asLong()).getBytes()));
+            case DiskDrivePeripheral ignored -> null;
+            case MonitorPeripheral monitor -> {
+                MonitorBlockEntity monitorBlockEntity = (MonitorBlockEntity) monitor.getTarget();
+                BlockPos originPos = monitorBlockEntity.getPos().offset(monitorBlockEntity.getRight(), -monitorBlockEntity.getXIndex()).offset(monitorBlockEntity.getDown(), -monitorBlockEntity.getYIndex());
+                yield new WrappedPeripheral(monitor, originPos, computer.getRuntime(), (peripheral2) -> new ComputerWrapper(computer, peripheral2));
+            }
             default ->
                     new WrappedPeripheral(peripheral, pos, computer.getRuntime(), (peripheral2) -> new ComputerWrapper(computer, peripheral2));
         };
@@ -37,12 +43,17 @@ public class CCT {
         IPeripheral peripheral = PeripheralLookup.get().find(world, pos, null);
         return switch (peripheral) {
             case null -> null;
-            case SpeakerPeripheral speaker ->
-                    new SpeakerWrapper(speaker, UUID.nameUUIDFromBytes(Long.toOctalString(pos.asLong()).getBytes()));
-            case RedstoneRelayPeripheral relay ->
-                    new RedstoneRelayWrapper(relay, UUID.nameUUIDFromBytes(Long.toOctalString(pos.asLong()).getBytes()));
+            case DiskDrivePeripheral ignored -> null;
             default -> new WrappedPeripheral(peripheral, pos, null, blankAccess::new);
         };
+    }
+
+    private static IPeripheral getPeripheral(World world, BlockPos pos) {
+        for (Direction direction : Direction.values()) {
+            IPeripheral temp = getGenericPeripheral((ServerWorld) world, pos, direction, world.getBlockEntity(pos));
+            if (temp!=null) return temp;
+        }
+        return null;
     }
 
     static class blankAccess implements IComputerAccess {

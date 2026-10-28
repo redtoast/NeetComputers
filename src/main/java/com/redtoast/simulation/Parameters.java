@@ -4,6 +4,7 @@ import com.google.gson.internal.Primitives;
 import com.redtoast.Compat.ComputerWrapper;
 import com.redtoast.simulation.annotations.*;
 import com.redtoast.simulation.annotations.Number;
+import com.redtoast.simulation.base.ExposedError;
 import com.redtoast.simulation.base.LanguageGeneric;
 import com.redtoast.simulation.parameterErrors.*;
 import com.redtoast.simulation.value.Value;
@@ -13,19 +14,21 @@ import com.redtoast.simulation.value.VarGroup;
 import com.redtoast.simulation.value.VarType;
 import dan200.computercraft.api.lua.Coerced;
 import dan200.computercraft.api.lua.IArguments;
+import dan200.computercraft.api.lua.ILuaContext;
 import dan200.computercraft.api.peripheral.IComputerAccess;
+import dan200.computercraft.core.computer.ComputerSide;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
+import java.lang.Exception;
 import java.lang.annotation.Annotation;
-import java.lang.reflect.Array;
-import java.lang.reflect.Method;
-import java.lang.reflect.Parameter;
-import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.*;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public record Parameters(ParameterType[] types, Class<?>[] classes, Class<?>[] wrappers, boolean isPacked, Class<?> provideFirst) {
     private static final Parameters empty = new Parameters(new ParameterType[0], new Class[0], new Class[0], false, null);
@@ -118,6 +121,9 @@ public record Parameters(ParameterType[] types, Class<?>[] classes, Class<?>[] w
             if (provideFirst.isAssignableFrom(IComputerAccess.class)) {
                 array[0] = new ComputerWrapper(runtime.getParent(), null);
             }
+            if (provideFirst.isAssignableFrom(ILuaContext.class)) {
+                array[0] = null;
+            }
         }
         return array;
     }
@@ -165,6 +171,7 @@ public record Parameters(ParameterType[] types, Class<?>[] classes, Class<?>[] w
 
     public static Object cast(Value<?> value, Class<?> clazz, boolean pack, Annotation[] annotations) {
         if (value.isNull()) return null;
+        if (clazz.isEnum()) return castEnum(clazz, (String) checkExists(value.castTo(VarType.STRING, annotations).getValue()));
         if (clazz == int.class) return checkExists(value.castTo(VarType.INT, annotations).getValue());
         if (clazz == double.class) return checkExists(value.castTo(VarType.DOUBLE, annotations).getValue());
         if (clazz == float.class) return checkExists(value.castTo(VarType.FLOAT, annotations).getValue());
@@ -196,12 +203,27 @@ public record Parameters(ParameterType[] types, Class<?>[] classes, Class<?>[] w
         throw new IllegalStateException("Attempted to cast unrecognized parameterErrors type");
     }
 
+    private static Object castEnum(Class<?> enumm, String key) {
+        try {
+            Enum[] enums = (Enum[]) enumm.getMethod("values").invoke(null);
+            for (Enum e : enums) {
+                if (e.toString().equalsIgnoreCase(key)) return e;
+            }
+            Pattern pattern = Pattern.compile("(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])");
+            String[] parts = enumm.toString().split("\\.");
+            Matcher matcher = pattern.matcher(parts[parts.length-1]);
+            throw new ExposedError(key.toLowerCase() + " is not a valid " + matcher.replaceAll(" ").replace('_', ' ').toLowerCase());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private Optional<String> getError(LanguageGeneric language, ParameterException exception) {
         return language==null ? Optional.of("Language Missing #"+exception.getPosition()+":\n"+ this) : Optional.of(language.generateError(exception)+":\n"+ this);
     }
 
     private static Object checkExists(Object value) {
-        if (value == null || value instanceof Null) throw new IllegalArgumentException("Attempted to cast unrecognized parameterErrors type");
+        if (value == null || value instanceof Null) throw new ExposedError("Attempted to cast unrecognized parameterErrors type");
         return value;
     }
 
@@ -223,7 +245,7 @@ public record Parameters(ParameterType[] types, Class<?>[] classes, Class<?>[] w
 
     public static Parameters deduceCCTParameters(Method method) {
         Parameter[] parameters = method.getParameters();
-        int specialMode = method.getParameters().length==0 ? 0 : method.getParameters()[0].getType().isAssignableFrom(IComputerAccess.class) ? 1 : 0;
+        int specialMode = method.getParameters().length==0 ? 0 : (method.getParameters()[0].getType().isAssignableFrom(IComputerAccess.class) || method.getParameters()[0].getType().isAssignableFrom(ILuaContext.class)) ? 1 : 0;
         ParameterType[] parameterTypes = new ParameterType[parameters.length - specialMode];
         Class<?>[] classes = new Class[parameters.length - specialMode];
         Class<?>[] wrappers = new Class[parameters.length - specialMode];
@@ -319,7 +341,7 @@ public record Parameters(ParameterType[] types, Class<?>[] classes, Class<?>[] w
         if (clazz == float.class || clazz == Float.class) type = VarFilter.FLOAT;
         if (clazz == boolean.class || clazz == Boolean.class) type = VarFilter.BOOLEAN;
         if (clazz == byte[].class || clazz == Bytes.class || clazz == ByteBuffer.class) type = VarFilter.BYTES;
-        if (clazz == char[].class || clazz == String.class) type = VarFilter.STRING;
+        if (clazz == char[].class || clazz == String.class || clazz.isEnum()) type = VarFilter.STRING;
         if (clazz == List.class) {
             type = VarFilter.LIST;
             depth++;
