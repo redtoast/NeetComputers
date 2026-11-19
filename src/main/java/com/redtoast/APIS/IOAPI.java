@@ -183,11 +183,6 @@ public class IOAPI implements API {
 //    }
 
     @Exposed
-    public boolean isViewed() {
-        return computer.isBeingViewed();
-    }
-
-    @Exposed
     public void broadcastLocal(@Primative Tuple args) {
         computer.sendNetworkMessage(args.toArray());
     }

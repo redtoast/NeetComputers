@@ -56,6 +56,11 @@ public class ChipAPI implements API {
         return NeetComputersServer.version;
     }
 
+    @Exposed
+    public boolean isViewed() {
+        return computer.isBeingViewed();
+    }
+
     @Override
     public String getLabel() {
         return "chip";
