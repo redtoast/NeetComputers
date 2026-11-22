@@ -44,12 +44,12 @@ public class DiskManager {
         }
     }
 
-    public DiskSystem createDisk(int pointer, String template, UUID uuid) throws DiskError {
+    public DiskSystem createDisk(int pointer, String template, UUID uuid, String diskid) throws DiskError {
         Path path = NeetComputersServer.worldPath.resolve("neetcomputers").resolve(String.valueOf(pointer)).normalize();
         for (Map.Entry<Integer, GenericSystem> entry : disks.entrySet()) {
             if (entry.getValue().equals(path)) throw new DiskError("Disk already exists in system");
         }
-        DiskSystem disk = new DiskSystem(pointer, template, uuid);
+        DiskSystem disk = new DiskSystem(pointer, template, uuid, diskid);
         addDisk(disk);
         return disk;
     }

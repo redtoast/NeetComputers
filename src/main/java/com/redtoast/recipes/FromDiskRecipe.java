@@ -53,7 +53,7 @@ public class FromDiskRecipe extends ShapedRecipe {
         if (craftingRecipeInput.getStacks().size()>=4) {
             ItemStack disk = craftingRecipeInput.getStackInSlot(1,1);
             if (!disk.isEmpty() && disk.getItem() instanceof DiskItem diskItem) {
-                output.set(ComputerDataComponent.TYPE, new ComputerDataComponent(true, diskItem.getAddress(disk, null), false, UUID.randomUUID(), disk.get(NeetComputersServer.TEMPLATE_COMPONENT)));
+                output.set(ComputerDataComponent.TYPE, new ComputerDataComponent(true, diskItem.getAddress(disk, null), false, UUID.randomUUID(), disk.get(NeetComputersServer.TEMPLATE_COMPONENT),UUID.randomUUID().toString()));
             }
         }
         return output;

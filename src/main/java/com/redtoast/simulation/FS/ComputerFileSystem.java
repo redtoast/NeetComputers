@@ -7,9 +7,9 @@ import java.util.UUID;
 public class ComputerFileSystem extends DiskManager{
     private final DiskSystem homedisk;
 
-    public ComputerFileSystem(int homePointer, String template, UUID computerID) throws DiskError {
+    public ComputerFileSystem(int homePointer, String template, UUID computerID, String diskid) throws DiskError {
         super();
-        homedisk = createDisk(homePointer, template, computerID);
+        homedisk = createDisk(homePointer, template, computerID, diskid);
         if (homedisk instanceof DiskSystem diskSystem && diskSystem.getBuild().language==null) {
             if (diskSystem.getBuild().isLua && BinaryLoader.loaded){
                 throw new DiskError("Lua failed to load (check logs, it might be possible to download functionality for your machine)");

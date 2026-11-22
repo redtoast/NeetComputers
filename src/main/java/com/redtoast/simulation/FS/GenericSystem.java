@@ -11,6 +11,7 @@ public interface GenericSystem {
     void update();
     Filepath getFile(String path);
     UUID getUuid();
+    String getDiskId();
     boolean partitionExists(String path);
     @Nullable Partition getPartition(String path);
     boolean createPartition(String name);

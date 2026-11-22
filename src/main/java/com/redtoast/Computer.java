@@ -76,6 +76,8 @@ public abstract class Computer implements BinaryGraphicsProvider {
     private String crashMessage = null;
     //uuid representing the computer, acquired by chip.getUUID() in runtime. generated during loading
     private UUID uuid = null;
+    //the unique identifier for hard disks, can be any string but defaults to a UUID
+    private String diskId = null;
     //marks if the computer should attempt to restart
     private boolean doReboot = false;
     //object representing the computers file interpreter
@@ -165,6 +167,11 @@ public abstract class Computer implements BinaryGraphicsProvider {
                 if (nbt.contains("Template")) {
                     template = nbt.getString("Template");
                 }
+                if (nbt.contains("DiskID")) {
+                    diskId = nbt.getString("DiskID");
+                } else {
+                    diskId = UUID.randomUUID().toString();
+                }
                 hasFiles = true;
             }else{
                 hasFiles = false;
@@ -181,6 +188,10 @@ public abstract class Computer implements BinaryGraphicsProvider {
             state = dataComponent.isOn() ? ComputerState.ON : ComputerState.OFF;
             uuid = dataComponent.id();
             template = dataComponent.template();
+            diskId = dataComponent.diskId();
+            if (hasFiles && diskId == null) {
+                diskId = UUID.randomUUID().toString();
+            }
             load();
         }
     }
@@ -202,6 +213,7 @@ public abstract class Computer implements BinaryGraphicsProvider {
         stack.set(NeetComputersServer.POINTER_COMPONENT, pointer);
         stack.set(NeetComputersServer.TEMPLATE_COMPONENT, template);
         stack.set(NeetComputersServer.UUID_COMPONENT, getUuid().toString());
+        stack.set(NeetComputersServer.DISKID_COMPONENT, diskId);
         hasFiles = false;
         fileSystem = null;
         return stack;
@@ -317,9 +329,10 @@ public abstract class Computer implements BinaryGraphicsProvider {
     public boolean isBeingViewed() {
         return !playerTracker.isEmpty();
     }
-    public void setFileSystem(int pointer, String template) {
+    public void setFileSystem(int pointer, String template, String diskId) {
         this.pointer = pointer;
         this.template = template;
+        this.diskId = diskId;
         hasFiles = true;
     }
 
@@ -339,7 +352,7 @@ public abstract class Computer implements BinaryGraphicsProvider {
         if (loaded){
             if (NeetComputersServer.worldPath!=null && fileSystem==null && hasFiles){
                 try {
-                    fileSystem = new ComputerFileSystem(pointer, template, getUuid());
+                    fileSystem = new ComputerFileSystem(pointer, template, getUuid(), diskId);
                 }catch (DiskError e) {
                     crash("Failed to load file system: "+e.getMessage());
                 }
@@ -384,6 +397,7 @@ public abstract class Computer implements BinaryGraphicsProvider {
         if (hasFiles) {
             nbt.putInt("Address", pointer);
             nbt.putString("Template", template);
+            nbt.putString("DiskID",diskId);
         }
         if (uuid!=null) nbt.putUuid("ComputerID",uuid);
         if (isCrashed() && crashMessage!=null) nbt.putString("crashMessage", crashMessage);
@@ -397,7 +411,8 @@ public abstract class Computer implements BinaryGraphicsProvider {
                 pointer,
                 isOn(),
                 uuid,
-                template
+                template,
+                diskId
         );
     }
 

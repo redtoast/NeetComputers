@@ -10,6 +10,7 @@ import java.util.UUID;
 
 public interface DiskItem {
     int getAddress(ItemStack stack, World world);
+    String getDiskId(ItemStack stack);
     String getTemplate(ItemStack stack);
     boolean isDefault(ItemStack stack);
     DiskSystem generateSystem(ItemStack stack, UUID uuid, BlockEntity caller) throws DiskError;

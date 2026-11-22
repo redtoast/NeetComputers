@@ -1,5 +1,5 @@
 plugins {
-	id 'fabric-loom' version "${loom_version}"
+	id 'net.fabricmc.fabric-loom-remap' version "${loom_version}"
 	id 'maven-publish'
 }
 version = project.mod_version
@@ -35,7 +35,12 @@ repositories {
 }
 
 loom {
-
+	runs {
+		client {
+			programArguments.add "--username NeetComputer"
+			programArguments.add "--uuid 67676767-6767-6767-6767-676767676767"
+		}
+	}
 }
 
 dependencies {

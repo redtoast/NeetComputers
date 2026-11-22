@@ -141,6 +141,12 @@ public class FilesAPI implements API {
     }
 
     @Exposed
+    public String getDiskID(int disk) {
+        GenericSystem diskSystem = getDisk(disk);
+        return diskSystem.getDiskId();
+    }
+
+    @Exposed
     public boolean diskExists(int disk) {
         return diskManager.diskExists(disk);
     }
