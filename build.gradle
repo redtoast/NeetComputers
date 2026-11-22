@@ -37,8 +37,10 @@ repositories {
 loom {
 	runs {
 		client {
-			programArguments.add "--username NeetComputer"
-			programArguments.add "--uuid 67676767-6767-6767-6767-676767676767"
+			programArguments.add "--username"
+			programArguments.add "NeetComputer"
+			programArguments.add "--uuid"
+			programArguments.add "67676767-6767-6767-6767-676767676767"
 		}
 	}
 }
