@@ -17,6 +17,7 @@ public class HardDrive extends Disk{
     @Override
     public void appendTooltip(ItemStack stack, Item.TooltipContext context, List<Text> tooltip, TooltipType type) {
         if (Boolean.TRUE.equals(stack.get(NeetComputersServer.BOOTABLE_COMPONENT))) tooltip.add(Text.of("Can be crafted into a computer").copy().formatted(Formatting.GRAY, Formatting.ITALIC));
+        tooltip.add(Text.of("Disk ID: " + stack.get(NeetComputersServer.DISKID_COMPONENT)).copy().formatted(Formatting.GRAY, Formatting.ITALIC));
         tooltip.add(Text.of("From: " + stack.get(NeetComputersServer.UUID_COMPONENT)).copy().formatted(Formatting.GRAY, Formatting.ITALIC));
         tooltip.add(Text.translatable("itemGroup.neetcomputers.main_item_group").formatted(Formatting.BLUE));
     }

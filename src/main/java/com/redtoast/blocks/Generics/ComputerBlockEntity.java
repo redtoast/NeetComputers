@@ -163,7 +163,7 @@ public class ComputerBlockEntity extends BlockEntity implements ExtendedScreenHa
         }else{
             if (computer.isDead() && !computer.hasFiles() && player.getMainHandStack().getItem() instanceof Disk disk) {
                 ItemStack stack = player.getMainHandStack();
-                computer.setFileSystem(disk.getAddress(stack, null), disk.getTemplate(stack));
+                computer.setFileSystem(disk.getAddress(stack, null), disk.getTemplate(stack),disk.getDiskId(stack));
                 if (!player.isCreative() || (stack.getItem() instanceof HardDrive))
                     player.setStackInHand(player.getActiveHand(), ItemStack.EMPTY);
                 else

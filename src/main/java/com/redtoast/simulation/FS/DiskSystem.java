@@ -23,12 +23,14 @@ public class DiskSystem implements GenericSystem {
     public final Path basePath;
     public final LinkedList<String> blacklist = new LinkedList<>();
     public final UUID uuid;
+    public final String diskId;
 
     private boolean saveBuild = false;
     private boolean saveBlacklist = false;
 
-    public DiskSystem(int pointer, String template, UUID uuid) throws DiskError {
+    public DiskSystem(int pointer, String template, UUID uuid, String diskId) throws DiskError {
         this.uuid = uuid;
+        this.diskId = diskId;
         Path path = NeetComputersServer.worldPath.resolve("neetcomputers").resolve(String.valueOf(pointer));
         path = path.normalize();
         basePath = path;
@@ -117,6 +119,10 @@ public class DiskSystem implements GenericSystem {
     @Override
     public UUID getUuid() {
         return uuid;
+    }
+
+    public String getDiskId() {
+        return diskId;
     }
 
     @Override
