@@ -5,6 +5,7 @@ import com.redtoast.simulation.FS.FileImplementations.*;
 public class FileHelper {
     public static Filepath getFile(DiskSystem fs, String path){
         String normalizedPath = normalize(path);
+        if (fs.getPartitions().size()==1 && normalizedPath.indexOf(':')==-1) normalizedPath = fs.getPartitions().get(0).path() + ':' + normalizedPath;
         if (validatePathStatic(normalizedPath)){
             String[] components = normalizedPath.split(":");
             if (fs.partitionExists(components[0])){
