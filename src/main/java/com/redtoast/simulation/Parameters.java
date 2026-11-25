@@ -10,13 +10,9 @@ import com.redtoast.simulation.parameterErrors.*;
 import com.redtoast.simulation.value.Value;
 import com.redtoast.simulation.value.ValueTypes.*;
 import com.redtoast.simulation.value.VarFilter;
-import com.redtoast.simulation.value.VarGroup;
 import com.redtoast.simulation.value.VarType;
-import dan200.computercraft.api.lua.Coerced;
-import dan200.computercraft.api.lua.IArguments;
-import dan200.computercraft.api.lua.ILuaContext;
+import dan200.computercraft.api.lua.*;
 import dan200.computercraft.api.peripheral.IComputerAccess;
-import dan200.computercraft.core.computer.ComputerSide;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Nullable;
 
@@ -25,6 +21,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.Hashtable;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Matcher;
@@ -191,6 +188,12 @@ public record Parameters(ParameterType[] types, Class<?>[] classes, Class<?>[] w
         if (clazz == Value.class) return value;
         if (clazz == List.class) return checkExists(value.castTo(VarType.LIST, annotations).getValue());
         if (clazz == Tuple.class) return checkExists(value.castTo(VarType.TUPLE, annotations).getValue());
+        if (clazz.isAssignableFrom(IArguments.class)) return new ObjectArguments(value.castTo(VarType.TUPLE, annotations).toTuple().stream().map(Value::getValue).toArray());
+        if (clazz.isAssignableFrom(LuaTable.class)) {
+            Hashtable<Object, Object> table = new Hashtable<>();
+            value.castTo(VarType.TABLE, annotations).toTable().foreach((key, value2) -> table.put(key.getValue(), value2.getValue()));
+            return new ObjectLuaTable(table);
+        }
         if (clazz.isArray()) {
             List list = (List) checkExists((pack ? value.castTo(VarType.TUPLE, annotations) : value.castTo(VarType.LIST, annotations)).getValue());
             Class<?> sub = Primitives.wrap(clazz.componentType());
@@ -223,7 +226,7 @@ public record Parameters(ParameterType[] types, Class<?>[] classes, Class<?>[] w
     }
 
     private static Object checkExists(Object value) {
-        if (value == null || value instanceof Null) throw new ExposedError("Attempted to cast unrecognized parameterErrors type");
+        if (value == null || value instanceof Null) throw new IllegalArgumentException("Attempted to cast unrecognized parameterErrors type");
         return value;
     }
 
@@ -334,7 +337,7 @@ public record Parameters(ParameterType[] types, Class<?>[] classes, Class<?>[] w
     static ParameterType inferType(Class<?> clazz, boolean allowTuple, int entryDepth, Annotation[] annotations) {
         VarFilter type = VarFilter.NULL;
         int depth = entryDepth;
-        VarGroup filter = VarGroup.NONE;
+        VarFilter filter = VarFilter.NULL;
         if (entryDepth>0 && Primitives.isPrimitive(clazz)) throw new IllegalArgumentException("Parameter arrays cant be primitive I.E (int[] should be Integer[])");
         if (clazz == int.class || clazz == Integer.class) type = VarFilter.INT;
         if (clazz == double.class || clazz == Double.class) type = VarFilter.DOUBLE;
@@ -345,27 +348,29 @@ public record Parameters(ParameterType[] types, Class<?>[] classes, Class<?>[] w
         if (clazz == List.class) {
             type = VarFilter.LIST;
             depth++;
-            filter = VarGroup.ANY;
-            if (hasAnnotation(annotations, Primative.class)) filter = VarGroup.PRIMITIVE;
-            if (hasAnnotation(annotations, Number.class)) filter = VarGroup.NUMBER;
+            filter = VarFilter.ANY;
+            if (hasAnnotation(annotations, Primative.class)) filter = VarFilter.PRIMITIVE;
+            if (hasAnnotation(annotations, Number.class)) filter = VarFilter.NUMBER;
+            if (getAnnotation(annotations, Filter.class) instanceof Filter filterAn) filter = filterAn.value();
         }
         if (clazz == Tuple.class || clazz.isAssignableFrom(IArguments.class)) {
             type = allowTuple ? VarFilter.TUPLE : VarFilter.LIST;
             depth++;
-            filter = VarGroup.ANY;
-            if (hasAnnotation(annotations, Primative.class)) filter = VarGroup.PRIMITIVE;
-            if (hasAnnotation(annotations, Number.class)) filter = VarGroup.NUMBER;
+            filter = VarFilter.ANY;
+            if (hasAnnotation(annotations, Primative.class)) filter = VarFilter.PRIMITIVE;
+            if (hasAnnotation(annotations, Number.class)) filter = VarFilter.NUMBER;
+            if (getAnnotation(annotations, Filter.class) instanceof Filter filterAn) filter = filterAn.value();
         }
-        if (clazz == Table.class) type = VarFilter.TABLE;
+        if (clazz == Table.class || clazz.isAssignableFrom(LuaTable.class)) type = VarFilter.TABLE;
         if (clazz == Function.class) type = VarFilter.FUNCTION;
-        if (clazz == Object.class || clazz == Value.class) type = hasAnnotation(annotations, Primative.class) ? VarFilter.PRIMITIVE : hasAnnotation(annotations, Number.class) ?  VarFilter.NUMBER : VarFilter.ANY;
+        if (clazz == Object.class || clazz == Value.class) type = hasAnnotation(annotations, Primative.class) ? VarFilter.PRIMITIVE : hasAnnotation(annotations, Number.class) ?  VarFilter.NUMBER : getAnnotation(annotations, Filter.class) instanceof Filter filterAn ? filterAn.value() : VarFilter.ANY;
         if (type == VarFilter.NULL) {
             if (clazz.isArray()) {
                 return inferType(clazz.componentType(), allowTuple, depth + 1, annotations);
             }
             throw new IllegalStateException("Attempted to parse unrecognized parameterErrors type");
         }
-        return new ParameterType(type, filter.toFilter(), depth, annotations);
+        return new ParameterType(type, filter, depth, annotations);
     }
 
     public static Parameters empty() {
