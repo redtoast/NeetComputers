@@ -5,6 +5,7 @@ import com.redtoast.Connections.PipeType;
 import com.redtoast.blocks.AccessPoint.AccessPointBlockEntity;
 import com.redtoast.blocks.ColorDisplay.ColorDisplayBlockEntity;
 import com.redtoast.blocks.ColorDisplay.ColorDisplayRenderer;
+import com.redtoast.blocks.ComputerSpeaker.ComputerSpeakerBlockEntity;
 import com.redtoast.blocks.DesktopComputer.DesktopComputerRenderer;
 import com.redtoast.blocks.DesktopComputer.DesktopEntityComputer;
 import com.redtoast.blocks.DriveBay.DriveBayBlockEntity;
@@ -79,6 +80,9 @@ public class NeetComputersClient implements ClientModInitializer {
 
 		BlockEntityType<RedstoneControllerBlockEntity> redstoneController = (BlockEntityType<RedstoneControllerBlockEntity>) BulkRegistry.fetchBlockEntityType("redstone_controller");
 		BulkRegistry.register(redstoneController, PipeSourceBlockRenderer::new);
+
+		BlockEntityType<ComputerSpeakerBlockEntity> computerSpeaker = (BlockEntityType<ComputerSpeakerBlockEntity>) BulkRegistry.fetchBlockEntityType("computer_speaker");
+		BulkRegistry.register(computerSpeaker, PipeSourceBlockRenderer::new);
 
 		BlockEntityType<DynamicLightBlockEntity> dynamicLightType = (BlockEntityType<DynamicLightBlockEntity>) BulkRegistry.fetchBlockEntityType("dynamic_light");
 		BulkRegistry.register(dynamicLightType, PipeSourceBlockRenderer::new);

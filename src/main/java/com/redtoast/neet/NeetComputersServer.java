@@ -1,8 +1,13 @@
 package com.redtoast.neet;
 
 import com.redtoast.Compat.MainThreadTicket;
+import com.redtoast.blocks.ComputerSpeaker.ComputerSpeakerBlock;
+import com.redtoast.blocks.ComputerSpeaker.ComputerSpeakerBlockEntity;
+import com.redtoast.blocks.Generics.SpeakerBlockEntity;
 import com.redtoast.items.*;
+import com.redtoast.simulation.APIRegistry;
 import com.redtoast.simulation.RuntimeThread;
+import com.redtoast.simulation.base.API;
 import dev.ryanhcode.sable.companion.SableCompanion;
 import com.mojang.brigadier.CommandDispatcher;
 import net.minecraft.text.Text;
@@ -88,6 +93,7 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.WorldSavePath;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Position;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -274,6 +280,10 @@ public class NeetComputersServer implements ModInitializer {
 		BulkRegistry.register("office_computer",officeComputer, OfficeEntityComputer::new,true);
 		BulkRegistry.register(BulkRegistry.fetchItemObject("office_computer"), group);
 
+		Block computerSpeaker = new ComputerSpeakerBlock(Block.Settings.create().strength(1.0f).hardness(1f).sounds(BlockSoundGroup.METAL));
+		BulkRegistry.register("computer_speaker",computerSpeaker, ComputerSpeakerBlockEntity::new,true);
+		BulkRegistry.register(BulkRegistry.fetchItemObject("computer_speaker"), group);
+
 		Block redstoneController = new RedstoneControllerBlock(Block.Settings.create().strength(3.0f).hardness(2f).sounds(BlockSoundGroup.METAL));
 		BulkRegistry.register("redstone_controller",redstoneController, RedstoneControllerBlockEntity::new,true);
 		BulkRegistry.register(BulkRegistry.fetchItemObject("redstone_controller"), group);
@@ -415,6 +425,20 @@ public class NeetComputersServer implements ModInitializer {
 		APILoader.register(InternetAPI::new);
 		APILoader.register(FilesAPI::new);
 		APILoader.register(HeadsUpAPI::new);
+		APILoader.register(new APIRegistry() {
+			@Override
+			public @NotNull API Create(Computer computer) {
+				if (computer.getParentEntity() instanceof SpeakerBlockEntity speakerBlockEntity) {
+					return new SoundAPI(speakerBlockEntity);
+				}
+				throw new IllegalArgumentException("How did you get here?");
+			}
+
+			@Override
+			public boolean predicate(Computer computer){
+				return computer.getParentEntity() instanceof SpeakerBlockEntity;
+			}
+		});
     }
 
 	public static boolean emitLight(){

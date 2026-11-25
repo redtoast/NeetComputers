@@ -9,6 +9,7 @@
   "block.neetcomputers.keyboard": "Key Board",
   "block.neetcomputers.drive_bay": "Drive Bay",
   "block.neetcomputers.access_point": "Access Point",
+  "block.neetcomputers.computer_speaker": "Computer Speaker",
   "menu.neetcomputers.tag_field": "tag...",
   "menu.neetcomputers.tag_field_title": "Custom Peripheral Tag",
   "menu.neetcomputers.function_field_title": "Manual Function Input",

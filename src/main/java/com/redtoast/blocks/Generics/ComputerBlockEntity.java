@@ -49,7 +49,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
-public class ComputerBlockEntity extends BlockEntity implements ExtendedScreenHandlerFactory<ComputerScreenInitPayload>, PeripheralProvider, NetworkReceiver, PipeRenderSource, BinaryGraphicsRenderProvider {
+public class ComputerBlockEntity extends SpeakerBlockEntity implements ExtendedScreenHandlerFactory<ComputerScreenInitPayload>, PeripheralProvider, NetworkReceiver, PipeRenderSource, BinaryGraphicsRenderProvider {
     private final Computer computer;
     private final RGBGraphicsArray graphics;
     private String tag = null;
@@ -452,5 +452,10 @@ public class ComputerBlockEntity extends BlockEntity implements ExtendedScreenHa
     @Override
     public void receiveNetwork(Value<?>... args) {
         computer.queueEvent(new EventGeneric("networkMessage", args), EventLabel.NETWORK);
+    }
+
+    @Override
+    public void queueEvent(String eventName, Object... args) {
+        computer.queueEvent(new EventGeneric(eventName, Value.of(args).getValue()), EventLabel.SYSTEM);
     }
 }
