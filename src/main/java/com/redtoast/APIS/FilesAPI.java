@@ -9,6 +9,8 @@ import com.redtoast.simulation.annotations.Exposed;
 import com.redtoast.simulation.base.API;
 import com.redtoast.simulation.base.ExposedError;
 import com.redtoast.simulation.value.Value;
+import com.redtoast.simulation.value.VarGroup;
+import com.redtoast.simulation.value.VarType;
 import com.redtoast.simulation.value.ValueTypes.List;
 import com.redtoast.simulation.value.ValueTypes.Table;
 import com.redtoast.simulation.value.ValueTypes.Tuple;
@@ -88,15 +90,20 @@ public class FilesAPI implements API {
     }
 
     @Exposed
-    public Table open(String path, @CanBeNull String mode, @CanBeNull Object flagsOrDisk, @CanBeNull Integer disk){
+    public Table open(String path, @CanBeNull String mode, @CanBeNull Value<?> flagsOrDisk, @CanBeNull Integer disk){
         Table flags = null;
         Integer resolvedDisk = disk;
-        if (flagsOrDisk instanceof Table table){
-            flags = table;
-        }else if (flagsOrDisk != null){
-            if (!(flagsOrDisk instanceof Integer) && !(flagsOrDisk instanceof Double) && !(flagsOrDisk instanceof Float))
-                throw new ExposedError("Invalid open flags");
-            resolvedDisk = ((Number) flagsOrDisk).intValue();
+        if (flagsOrDisk != null && !flagsOrDisk.isNull()){
+            if (flagsOrDisk.instanceOf(VarGroup.NUMBER)){
+                resolvedDisk = flagsOrDisk.toInt();
+            }else if (flagsOrDisk.instanceOf(VarType.TABLE)){
+                flags = flagsOrDisk.toTable();
+            }else{
+                List positional = flagsOrDisk.toList();
+                if (positional == null || !positional.isEmpty())
+                    throw new ExposedError("Invalid open flags");
+                flags = new Table();
+            }
         }
 
         GenericSystem diskSystem = getDisk(resolvedDisk);
