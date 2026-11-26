@@ -2,6 +2,7 @@
   "replace": false,
   "values": [
     "neetcomputers:disk", 
-    "neetcomputers:neetos_disk"
+    "neetcomputers:neetos_disk",
+    "neetcomputers:xesos_disk"
   ]
 }
