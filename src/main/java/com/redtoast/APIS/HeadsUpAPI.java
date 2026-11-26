@@ -33,6 +33,21 @@ public class HeadsUpAPI implements API {
     }
 
     @Exposed
+    public void drawPixel(@Index int x, @Index int y){
+        setPixel(x, y, true);
+    }
+
+    @Exposed
+    public void drawRec(@Index int x1, @Index int y1, @Index int x2, @Index int y2){
+        fill(x1, y1, x2, y2, true);
+    }
+
+    @Exposed
+    public void clear(){
+        graphics = new BinaryGraphicsArray(sizex, sizey);
+    }
+
+    @Exposed
     public void drawLine(@Index int x1, @Index int y1, @Index int x2, @Index int y2){
         if (x1<0 || x2<0 || y1<0 || y2<0 || x1>=sizex || x2>=sizex || y1>=sizey || y2>=sizey) {
             throw new ExposedError("values not in allowed range");

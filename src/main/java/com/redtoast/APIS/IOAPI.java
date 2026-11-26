@@ -119,6 +119,24 @@ public class IOAPI implements API {
     }
 
     @Exposed
+    public boolean isCompatibility(String uuidString){
+        try {
+            UUID.fromString(uuidString);
+        }catch (IllegalArgumentException illegalArgumentException){
+            throw new ExposedError("UUID invalidly formatted");
+        }
+        for (PeripheralProvider peripheralProvider : computer.getPeripheralProviders()){
+            if (Objects.equals(peripheralProvider.getUuid().toString(), uuidString)) return peripheralProvider.isCompatibility();
+        }
+        throw new ExposedError("Peripheral not found");
+    }
+
+    @Exposed
+    public boolean isViewed(){
+        return computer.isBeingViewed();
+    }
+
+    @Exposed
     public List queryTag(String tag){
         if (tag.isBlank()) throw new ExposedError("tag cant be blank");
         tag = tag.trim();

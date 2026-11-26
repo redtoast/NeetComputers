@@ -27,6 +27,7 @@ public class DiskSystem implements GenericSystem {
 
     private boolean saveBuild = false;
     private boolean saveBlacklist = false;
+    private long usedSpace = -1;
 
     public DiskSystem(int pointer, String template, UUID uuid, String diskId) throws DiskError {
         this.uuid = uuid;
@@ -126,6 +127,48 @@ public class DiskSystem implements GenericSystem {
     }
 
     @Override
+    public long getCapacity() {
+        return build.capacity;
+    }
+
+    public synchronized long getUsedSpace() {
+        if (usedSpace < 0) usedSpace = computeUsedSpace();
+        return usedSpace;
+    }
+
+    @Override
+    public long getFreeSpace() {
+        return Math.max(0, getCapacity() - getUsedSpace());
+    }
+
+    @Override
+    public boolean hasSpaceFor(long bytes) {
+        return bytes <= 0 || getFreeSpace() >= bytes;
+    }
+
+    public synchronized void accountSpace(long delta) {
+        if (delta == 0) return;
+        if (usedSpace < 0) usedSpace = computeUsedSpace();
+        usedSpace = Math.max(0, usedSpace + delta);
+    }
+
+    private long computeUsedSpace() {
+        if (!basePath.toFile().isDirectory()) return 0;
+        long used = 0;
+        try (Stream<Path> paths = Files.walk(basePath)) {
+            for (Path path : (Iterable<Path>) paths::iterator) {
+                if (!path.toFile().isFile()) continue;
+                try {
+                    used += Files.size(path);
+                } catch (IOException ignored) {
+                }
+            }
+        } catch (IOException ignored) {
+        }
+        return used;
+    }
+
+    @Override
     public boolean partitionExists(String path){
         for (Partition partition : build.partitions){
             if (partition.path().equalsIgnoreCase(path)){
@@ -187,6 +230,7 @@ public class DiskSystem implements GenericSystem {
                 if (build.partitions.get(i).readOnly()) throw new ExposedError("Access denied");
                 build.partitions.remove(i);
                 FileUtils.deleteQuietly(basePath.resolve(name).toFile());
+                usedSpace = -1;
                 saveBuild();
                 for (int j = blacklist.size()-1; j >= 0; j--) {
                     if (blacklist.get(i).split(":")[0].equals(name)) {
