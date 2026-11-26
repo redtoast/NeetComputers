@@ -40,9 +40,7 @@ public record DataNode(String address, boolean isDirectory, String name, String 
             TarArchiveEntry ze;
             while ((ze = archive.getNextEntry()) != null) {
                 if (ze.getName().equalsIgnoreCase(path)) {
-                    byte[] buffer = new byte[(int) ze.getSize()];
-                    archive.read(buffer, 0, (int) ze.getSize());
-                    return StringUtils.toEncodedString(buffer, null);
+                    return StringUtils.toEncodedString(archive.readAllBytes(), null);
                 }
             }
             throw new RuntimeException("Cant find path ("+address+':'+path+')');
@@ -63,9 +61,7 @@ public record DataNode(String address, boolean isDirectory, String name, String 
             TarArchiveEntry ze;
             while ((ze = archive.getNextEntry()) != null) {
                 if (ze.getName().equalsIgnoreCase(path)) {
-                    byte[] buffer = new byte[(int) ze.getSize()];
-                    archive.read(buffer, 0, (int) ze.getSize());
-                    return buffer;
+                    return archive.readAllBytes();
                 }
             }
             throw new RuntimeException("Cant find path ("+address+':'+path+')');

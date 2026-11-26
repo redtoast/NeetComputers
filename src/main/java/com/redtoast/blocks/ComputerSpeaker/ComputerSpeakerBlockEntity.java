@@ -85,6 +85,11 @@ public class ComputerSpeakerBlockEntity extends SpeakerBlockEntity implements Pe
     }
 
     @Override
+    public UUID getSourceUuid() {
+        return getUuid();
+    }
+
+    @Override
     public UUID getUuid() {
         if (uuid==null) {
             uuid = UUID.randomUUID();

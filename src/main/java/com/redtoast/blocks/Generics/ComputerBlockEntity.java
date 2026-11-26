@@ -52,6 +52,7 @@ import java.util.*;
 public class ComputerBlockEntity extends SpeakerBlockEntity implements ExtendedScreenHandlerFactory<ComputerScreenInitPayload>, PeripheralProvider, NetworkReceiver, PipeRenderSource, BinaryGraphicsRenderProvider {
     private final Computer computer;
     private final RGBGraphicsArray graphics;
+    private final UUID speakerSource;
     private String tag = null;
     private boolean loaded = false;
     private List<com.redtoast.Connections.PeripheralProvider> peripheralProviderCache = List.of();
@@ -107,6 +108,7 @@ public class ComputerBlockEntity extends SpeakerBlockEntity implements ExtendedS
             }
         };
         graphics = computer.getGraphics();
+        speakerSource = UUID.randomUUID();
     }
 
     public void renderBinaryGraphics(BinaryGraphicsArray graphics){
@@ -224,6 +226,7 @@ public class ComputerBlockEntity extends SpeakerBlockEntity implements ExtendedS
                 }
                 computerBlock.scanCounter++;
                 if (!computerBlock.computer.isLoaded()) return;
+                computerBlock.tickSpeaker((ServerWorld) world);
                 computerBlock.computer.tick(world);
                 BlockState current = world.getBlockState(blockPos);
                 BlockState updated = current
@@ -245,6 +248,8 @@ public class ComputerBlockEntity extends SpeakerBlockEntity implements ExtendedS
                 computerAccess.removeSelf(); //detach computers from peripherals properly
             }
         }
+        stopSpeaker();
+        getSpeakerStream().close();
     }
 
     public Computer getComputer() {return computer;}
@@ -427,6 +432,11 @@ public class ComputerBlockEntity extends SpeakerBlockEntity implements ExtendedS
     @Override
     public UUID getUuid() {
         return computer.getUuid();
+    }
+
+    @Override
+    public UUID getSourceUuid() {
+        return speakerSource;
     }
 
     @Override

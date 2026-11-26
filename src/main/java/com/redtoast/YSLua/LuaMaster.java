@@ -64,6 +64,9 @@ public class LuaMaster implements LanguageGeneric {
         if (value.getType()==castTo) {
             return value;
         }
+        if (castTo==VarType.FLOAT) return Value.of(value.toFloat());
+        if (castTo==VarType.DOUBLE) return Value.of(value.toDouble());
+        if (castTo==VarType.BOOLEAN) return Value.of(value.toBool());
         if (castTo==VarType.BYTES) return Value.of(new Bytes(((String) value.getValue()).getBytes(StandardCharsets.ISO_8859_1)));
         if (castTo==VarType.STRING) return Value.of(new String(((Bytes) value.getValue()).getData(), StandardCharsets.UTF_8));
         if (castTo==VarType.LIST) return Value.of(value.toList());

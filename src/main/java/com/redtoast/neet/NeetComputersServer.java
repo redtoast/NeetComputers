@@ -358,6 +358,8 @@ public class NeetComputersServer implements ModInitializer {
 		PayloadTypeRegistry.playS2C().register(ClipboardRequest.ID, ClipboardRequest.CODEC);
 		PayloadTypeRegistry.playS2C().register(CloseRGBPayload.ID, CloseRGBPayload.CODEC);
 		PayloadTypeRegistry.playS2C().register(PipeBufferPayload.ID, PipeBufferPayload.CODEC);
+		PayloadTypeRegistry.playS2C().register(SpeakerAudioPayload.ID, SpeakerAudioPayload.CODEC);
+		PayloadTypeRegistry.playS2C().register(SpeakerStopPayload.ID, SpeakerStopPayload.CODEC);
 
 		ServerPlayNetworking.registerGlobalReceiver(EventUploadPayload.ID, (payload, context) -> {
 			if ((context.player().currentScreenHandler!=null && context.player().currentScreenHandler.syncId == payload.syncId() && context.player().currentScreenHandler instanceof RGBScreenHandler handler)){
