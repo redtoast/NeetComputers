@@ -1,4 +1,4 @@
-package com.redtoast.YSLua;
+package com.redtoast.NXLua;
 
 import java.util.Map;
 

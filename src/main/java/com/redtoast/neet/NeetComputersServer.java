@@ -199,7 +199,7 @@ public class NeetComputersServer implements ModInitializer {
 		BuildData.updateDat();
 		version += BuildData.VERSION;
 
-		LOGGER.info(version+" running using YSLua "+ BuildData.LUA_VERSION);
+		LOGGER.info(version+" running using NXLua "+ BuildData.LUA_VERSION);
 		if (DO_LOGGING) LOGGER.info("mod build from "+BuildData.BUILD_TIME);
 
 		ServerLifecycleEvents.SERVER_STARTING.register(NeetComputersServer::updateServer);

@@ -1,4 +1,4 @@
-package com.redtoast.YSLua;
+package com.redtoast.NXLua;
 
 import com.redtoast.Computer;
 import com.redtoast.simulation.Parameters;

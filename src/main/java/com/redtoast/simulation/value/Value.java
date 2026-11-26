@@ -1,6 +1,6 @@
 package com.redtoast.simulation.value;
 
-import com.redtoast.YSLua.LuaMaster;
+import com.redtoast.NXLua.LuaMaster;
 import com.redtoast.simulation.base.LanguageGeneric;
 import com.redtoast.simulation.value.ValueTypes.*;
 import com.redtoast.simulation.value.ValueTypes.Exception;

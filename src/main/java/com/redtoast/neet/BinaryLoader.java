@@ -1,7 +1,7 @@
 package com.redtoast.neet;
 
-import com.redtoast.YSLua.LuaBridge;
-import com.redtoast.YSLua.LuaMaster;
+import com.redtoast.NXLua.LuaBridge;
+import com.redtoast.NXLua.LuaMaster;
 import com.redtoast.simulation.APILoader;
 import net.minecraft.resource.ResourceManager;
 import net.minecraft.util.Identifier;
@@ -13,7 +13,6 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Hashtable;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -29,17 +28,13 @@ public class BinaryLoader {
         loaded = true;
         Map<String, Fork> forks = new Hashtable<>();
         datahandling.findResources("binaries", arg -> {
-            if (arg.toString().matches("^neetcomputers:binaries\\/[a-z_0-1\\.]*?-[a-z0-9_\\.]*?\\/(?:bridge|yslua)\\.(?:dll|so|dylib)$")) {
+            if (arg.toString().matches("^neetcomputers:binaries\\/[a-z_0-1\\.]*?-[a-z0-9_\\.]*?\\/bridge\\.(?:dll|so|dylib)$")) {
                 String[] bits = arg.toString().split("/");
                 String[] canidates = bits[1].split("-");
                 String[] osCanidates = canidates[0].split("\\.");
                 String[] archCanidates = canidates[1].split("\\.");
                 String fileType = bits[2].split("\\.")[1];
-                if (forks.containsKey(bits[1])) {
-                    forks.get(bits[1]).complete.set(true);
-                }else{
-                    forks.put(bits[1], new Fork(osCanidates, archCanidates, bits[1], fileType, new AtomicBoolean(false)));
-                }
+                forks.put(bits[1], new Fork(osCanidates, archCanidates, bits[1], fileType));
             }
             return true;
         });
@@ -48,7 +43,7 @@ public class BinaryLoader {
         AtomicReference<Fork> leading = new AtomicReference<>();
         AtomicInteger score = new AtomicInteger(9999);
         forks.forEach((filter, fork) -> {
-            if (fork.complete.get() && Arrays.asList(fork.archs).contains(arch)){
+            if (Arrays.asList(fork.archs).contains(arch)){
                 int score2 = 9999;
                 for (String name : fork.names) {
                     if (!name.isBlank() && os.matches('^'+name+".*")) {
@@ -69,12 +64,9 @@ public class BinaryLoader {
                 NeetComputersServer.LOGGER.error("Unable to find NeetComputer lua runtime for platform {}-{}", os, arch);
             }else{
                 Fork leader = leading.get();
-                String path = "binaries/"+leader.path+"/FILE."+leader.type;
+                String path = "binaries/"+leader.path+"/bridge."+leader.type;
                 Path bridge = gamePath.resolve("bridge."+leader.type);
-                Path yslua = gamePath.resolve("yslua."+leader.type);
-                copy(path.replaceFirst("FILE", "bridge"), bridge);
-                copy(path.replaceFirst("FILE", "yslua"), yslua);
-                System.load(yslua.toString());
+                copy(path, bridge);
                 System.load(bridge.toString());
                 LuaBridge testInstance = new LuaBridge() {
                     @Override
@@ -107,7 +99,7 @@ public class BinaryLoader {
                     testInstance.close();
                     return;
                 }
-                testInstance.init("print('YSLua loaded successfully!')", 1, 20);
+                testInstance.init("print('NXLua loaded successfully!')", 1, 20);
                 testInstance.tick();
                 testInstance.close();
                 linked = true;
@@ -130,5 +122,5 @@ public class BinaryLoader {
         outputStream.close();
     }
 
-    private record Fork(String[] names, String[] archs, String path, String type, AtomicBoolean complete) {}
+    private record Fork(String[] names, String[] archs, String path, String type) {}
 }
