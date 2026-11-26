@@ -113,11 +113,35 @@ public class FileHeader implements Exposable {
     }
 
     @Exposed
+    public int size() {
+        if (!open)
+            throw new ExposedError("Attempt to use a closed file");
+        return byteBuffer.length;
+    }
+
+    @Exposed
+    public void truncate(int size) {
+        if (!open)
+            throw new ExposedError("Attempt to use a closed file");
+        if (!canWrite)
+            throw new ExposedError("Access denied");
+        if (size < 0)
+            throw new ExposedError("Invalid size");
+        if (size > byteBuffer.length && !fs.hasSpaceFor(size - byteBuffer.length))
+            throw new ExposedError("Disk full");
+        byte[] resized = new byte[size];
+        System.arraycopy(byteBuffer, 0, resized, 0, Math.min(byteBuffer.length, size));
+        byteBuffer = resized;
+        flush();
+    }
+
+    @Exposed
     public void write(int bytes) {
         if (!open)
             throw new ExposedError("Attempt to use a closed file");
         if (!canWrite)
             throw new ExposedError("Access denied");
+        requireSpace(1);
         byte[] newBuffer = new byte[byteBuffer.length + 1];
         System.arraycopy(byteBuffer, 0, newBuffer, 0, byteBuffer.length);
         newBuffer[byteBuffer.length] = (byte) bytes;
@@ -136,10 +160,15 @@ public class FileHeader implements Exposable {
         } else {
             dataToWrite = new String(bytes.getData(), StandardCharsets.UTF_8).getBytes(StandardCharsets.UTF_8);
         }
+        requireSpace(dataToWrite.length);
         byte[] newBuffer = new byte[byteBuffer.length + dataToWrite.length];
         System.arraycopy(byteBuffer, 0, newBuffer, 0, byteBuffer.length);
         System.arraycopy(dataToWrite, 0, newBuffer, byteBuffer.length, dataToWrite.length);
         byteBuffer = newBuffer;
+    }
+
+    private void requireSpace(int growth) {
+        if (growth > 0 && !fs.hasSpaceFor(growth)) throw new ExposedError("Disk full");
     }
 
     @Exposed

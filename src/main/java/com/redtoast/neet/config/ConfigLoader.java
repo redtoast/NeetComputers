@@ -17,7 +17,8 @@ public class ConfigLoader {
             new BooleanConfigOption(true, "allow-internet-access"),
             new RateConfigOption(4000, "internet-rate-limit"),
             new IntegerConfigOption(15, "internet-outgoing-buffer-size"),
-            new IntegerConfigOption(5, "internet-max-sockets")
+            new IntegerConfigOption(5, "internet-max-sockets"),
+            new RateConfigOption(10 * 1024 * 1024, "disk-capacity")
     });
     private static final ConfigurationTable clientConfigurationTable = new ConfigurationTable(new ConfigOption[]{
             new BooleanConfigOption(true, "computers-emit-light")
@@ -65,6 +66,8 @@ public class ConfigLoader {
                         internet-outgoing-buffer-size = 15
                         #amount of sockets that can be live on a computer at once
                         internet-max-sockets = 5
+                        #maximum size of a disk, in bytes, accepts kb/mb/gb/tb suffixes
+                        disk-capacity = 10mb
                         #allows experimental compatibility features
                         CCT-compatibility = true
                         """);

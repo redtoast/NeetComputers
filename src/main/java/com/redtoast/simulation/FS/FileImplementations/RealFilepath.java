@@ -117,9 +117,13 @@ public class RealFilepath implements Filepath {
         if (!isFile()) return false;
         if (!canWrite()) return false;
         Path spath = root.resolve(relPath);
+        String text = new String(bytes, StandardCharsets.UTF_8);
+        long growth = text.getBytes(StandardCharsets.UTF_8).length - currentSize();
+        requireSpace(growth);
         FileWriter writer = new FileWriter(spath.normalize().toFile(), false);
-        writer.write(new String(bytes, StandardCharsets.UTF_8));
+        writer.write(text);
         writer.close();
+        fs.accountSpace(growth);
         return true;
     }
 
@@ -129,10 +133,27 @@ public class RealFilepath implements Filepath {
         if (!isFile()) return false;
         if (!canWrite()) return false;
         Path spath = root.resolve(relPath);
+        String text = new String(bytes, StandardCharsets.UTF_8);
+        long growth = text.getBytes(StandardCharsets.UTF_8).length;
+        requireSpace(growth);
         FileWriter writer = new FileWriter(spath.normalize().toFile(), true);
-        writer.write(new String(bytes, StandardCharsets.UTF_8));
+        writer.write(text);
         writer.close();
+        fs.accountSpace(growth);
         return true;
+    }
+
+    private long currentSize() {
+        Path spath = root.resolve(relPath);
+        try {
+            return Files.isRegularFile(spath) ? Files.size(spath) : 0;
+        } catch (IOException e) {
+            return 0;
+        }
+    }
+
+    private void requireSpace(long growth) throws IOException {
+        if (growth > 0 && !fs.hasSpaceFor(growth)) throw new IOException("Disk full");
     }
 
     @Override
@@ -153,8 +174,11 @@ public class RealFilepath implements Filepath {
         if (!isFile()) return false;
         if (!canWrite()) return false;
         Path spath = root.resolve(relPath);
+        long growth = (long) bytes.length - currentSize();
+        requireSpace(growth);
         try (OutputStream out = new FileOutputStream(spath.toFile(), false)) {
             out.write(bytes);
+            fs.accountSpace(growth);
             return true;
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -167,8 +191,10 @@ public class RealFilepath implements Filepath {
         if (!isFile()) return false;
         if (!canWrite()) return false;
         Path spath = root.resolve(relPath);
+        requireSpace(bytes.length);
         try (OutputStream out = new FileOutputStream(spath.toFile(), true)) {
             out.write(bytes);
+            fs.accountSpace(bytes.length);
             return true;
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -181,7 +207,10 @@ public class RealFilepath implements Filepath {
         if (!exists()) return false;
         if (!canWrite()) return false;
         Path spath = root.resolve(relPath);
-        return FileUtils.deleteQuietly(spath.toFile());
+        long size = currentSize();
+        boolean deleted = FileUtils.deleteQuietly(spath.toFile());
+        if (deleted) fs.accountSpace(-size);
+        return deleted;
     }
 
     @Override

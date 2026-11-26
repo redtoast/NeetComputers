@@ -12,6 +12,9 @@ public interface GenericSystem {
     Filepath getFile(String path);
     UUID getUuid();
     String getDiskId();
+    long getCapacity();
+    long getFreeSpace();
+    boolean hasSpaceFor(long bytes);
     boolean partitionExists(String path);
     @Nullable Partition getPartition(String path);
     boolean createPartition(String name);
