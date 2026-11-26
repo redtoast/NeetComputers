@@ -78,7 +78,11 @@ public class FilesAPI implements API {
         return diskSystem.deletePartition(name);
     }
 
-    private Table openFile(Filepath filepath, GenericSystem diskSystem, OpeningMode openingMode){
+    @Exposed
+    public Table open(String path, @CanBeNull String mode, @CanBeNull Integer disk){
+        GenericSystem diskSystem = getDisk(disk);
+        OpeningMode openingMode = FileHelper.getMode(mode==null ? "r" : mode);
+        Filepath filepath = diskSystem.getFile(path);
         if (filepath.isDirectory()) throw new ExposedError("Not a file");
         if (openingMode.invalid()) throw new ExposedError("Invalid open mode");
         if (!filepath.exists() && !openingMode.create()) throw new ExposedError("Not a file");
@@ -88,23 +92,11 @@ public class FilesAPI implements API {
     }
 
     @Exposed
-    public Table open(String path, @CanBeNull String mode, @CanBeNull Object flagsOrDisk, @CanBeNull Integer disk){
-        Table flags = null;
-        Integer resolvedDisk = disk;
-        if (flagsOrDisk instanceof Table table){
-            flags = table;
-        }else if (flagsOrDisk != null){
-            if (!(flagsOrDisk instanceof Integer) && !(flagsOrDisk instanceof Double) && !(flagsOrDisk instanceof Float))
-                throw new ExposedError("Invalid open flags");
-            resolvedDisk = ((Number) flagsOrDisk).intValue();
-        }
-
-        GenericSystem diskSystem = getDisk(resolvedDisk);
+    public Table open(String path, @CanBeNull String mode, Table flags, @CanBeNull Integer disk){
+        GenericSystem diskSystem = getDisk(disk);
         OpeningMode openingMode = FileHelper.getMode(mode==null ? "r" : mode);
         if (openingMode.invalid()) throw new ExposedError("Invalid open mode");
         Filepath filepath = diskSystem.getFile(path);
-
-        if (flags == null) return openFile(filepath, diskSystem, openingMode);
 
         boolean exclusive = false;
         boolean follow = true;
@@ -136,7 +128,11 @@ public class FilesAPI implements API {
                 throw new ExposedError(e.getMessage());
             }
         }
-        return openFile(filepath, diskSystem, openingMode);
+        if (filepath.isDirectory()) throw new ExposedError("Not a file");
+        if (!filepath.exists() && !openingMode.create()) throw new ExposedError("Not a file");
+        if (openingMode.canRead() && !filepath.canRead()) throw new ExposedError("Access denied");
+        if (openingMode.canWrite() && !filepath.canWrite()) throw new ExposedError("Access denied");
+        return APILoader.TableizeAPI(new FileHeader(filepath, diskSystem, openingMode), parent.getRuntime());
     }
 
     private Path partitionRoot(GenericSystem diskSystem, @CanBeNull String partition){
