@@ -8,12 +8,10 @@ import org.jetbrains.annotations.Nullable;
 import java.util.LinkedList;
 
 public class DiskTable {
-    public static final long DEFAULT_CAPACITY = 10L * 1024 * 1024;
     public final LinkedList<Partition> partitions = new LinkedList<>();
     public String entrypoint = null;
     public @Nullable LanguageGeneric language = null;
     public final boolean isLua;
-    public long capacity = DEFAULT_CAPACITY;
 
     public DiskTable(String json) throws DiskError, JsonSyntaxException{
         JsonElement element = JsonParser.parseString(json);
@@ -38,14 +36,6 @@ public class DiskTable {
             }
         }else
             isLua = false;
-        if (object.has("capacity")){
-            if (!object.get("capacity").isJsonPrimitive() || !object.getAsJsonPrimitive("capacity").isNumber()){
-                throw new DiskError("Build config 'capacity' expected number");
-            }
-            long parsed = object.get("capacity").getAsLong();
-            if (parsed <= 0) throw new DiskError("Build config 'capacity' must be greater than zero");
-            capacity = parsed;
-        }
         if (!object.has("partitions")){
             throw new DiskError("Build config expected partitions, got null");
         }
@@ -119,7 +109,6 @@ public class DiskTable {
             object.addProperty("entrypoint", entrypoint);
             object.addProperty("language", language.getName());
         }
-        object.addProperty("capacity", capacity);
         JsonArray partitions = new JsonArray();
         for (Partition partition : this.partitions) {
             JsonObject partitionObj = new JsonObject();

@@ -2,6 +2,7 @@ package com.redtoast.simulation.FS;
 
 import com.google.gson.JsonSyntaxException;
 import com.redtoast.neet.NeetComputersServer;
+import com.redtoast.neet.config.ConfigLoader;
 import com.redtoast.simulation.FS.FileImplementations.Filepath;
 import com.redtoast.simulation.base.ExposedError;
 import com.redtoast.simulation.base.LanguageGeneric;
@@ -128,7 +129,7 @@ public class DiskSystem implements GenericSystem {
 
     @Override
     public long getCapacity() {
-        return build.capacity;
+        return (Integer) ConfigLoader.getServerConfig("disk-capacity");
     }
 
     public synchronized long getUsedSpace() {
