@@ -8,6 +8,7 @@ import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.BlockEntityTicker;
 import net.minecraft.block.entity.BlockEntityType;
 import net.minecraft.item.ItemPlacementContext;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.state.StateManager;
 import net.minecraft.state.property.Properties;
 import net.minecraft.util.math.BlockPos;
@@ -50,5 +51,16 @@ public class ComputerSpeakerBlock extends HorizontalFacingBlock implements Block
     @Override
     protected void appendProperties(StateManager.Builder<Block, BlockState> builder) {
         builder.add(Properties.HORIZONTAL_FACING);
+    }
+
+    @Nullable
+    @Override
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(World world, BlockState state, BlockEntityType<T> type) {
+        if (world.isClient()) return null;
+        return (world1, pos, state1, blockEntity) -> {
+            if (blockEntity instanceof ComputerSpeakerBlockEntity speaker && world1 instanceof ServerWorld serverWorld) {
+                speaker.tickSpeaker(serverWorld);
+            }
+        };
     }
 }

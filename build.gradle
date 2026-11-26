@@ -63,6 +63,9 @@ dependencies {
 	include(modApi(
 		"dev.ryanhcode.sable-companion:sable-companion-fabric-${project.minecraft_version}:${sable_companion_version}"
 	))
+
+	include(implementation("de.sciss:jump3r:1.0.5"))
+	include(implementation("javazoom:jlayer:1.0.1"))
 }
 
 processResources {

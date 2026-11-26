@@ -1,0 +1,10 @@
+{
+  "speaker_stream": {
+    "sounds": [
+      {
+        "name": "neetcomputers:silence",
+        "stream": true
+      }
+    ]
+  }
+}

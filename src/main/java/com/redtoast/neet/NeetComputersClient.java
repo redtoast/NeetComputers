@@ -18,6 +18,7 @@ import com.redtoast.blocks.LargeComputer.LargeEntityComputer;
 import com.redtoast.blocks.OfficeComputer.OfficeComputerRenderer;
 import com.redtoast.blocks.OfficeComputer.OfficeEntityComputer;
 import com.redtoast.blocks.RedstoneController.RedstoneControllerBlockEntity;
+import com.redtoast.audio.client.ClientSpeakerManager;
 import com.redtoast.blocks.SimpleDisplay.SimpleDisplayBlockEntity;
 import com.redtoast.blocks.SimpleDisplay.SimpleDisplayRenderer;
 import com.redtoast.graphics.BinaryGraphicsArray;
@@ -55,6 +56,7 @@ public class NeetComputersClient implements ClientModInitializer {
 		ScreenShaders.register();
 		ClientTickEvents.END_CLIENT_TICK.register(client -> {
 			if (client.world != null && client.world.getTime() % 200 == 0) DisplayTextureManager.purge();
+			ClientSpeakerManager.tick(client);
 		});
 		// Setup pipe renderer
 		WorldRenderEvents.AFTER_ENTITIES.register(CableRenderer::eventCallback);
@@ -155,6 +157,16 @@ public class NeetComputersClient implements ClientModInitializer {
 
 		ClientPlayNetworking.registerGlobalReceiver(ReturnMessagePayload.ID, (payload, context) -> {
 			if (context.client().player!=null && context.client().player.currentScreenHandler instanceof PeripheralToolScreenHandler handler) handler.setReturn(payload.message(), payload.type());
+		});
+
+		ClientPlayNetworking.registerGlobalReceiver(SpeakerAudioPayload.ID, (payload, context) -> {
+			context.client().execute(() -> ClientSpeakerManager.onAudio(
+					context.client(), payload.source(),
+					payload.x(), payload.y(), payload.z(), payload.volume(), payload.audio()));
+		});
+
+		ClientPlayNetworking.registerGlobalReceiver(SpeakerStopPayload.ID, (payload, context) -> {
+			context.client().execute(() -> ClientSpeakerManager.onStop(context.client(), payload.source()));
 		});
 	}
 }
