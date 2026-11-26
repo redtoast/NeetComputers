@@ -1,4 +1,4 @@
-package com.redtoast.YSLua;
+package com.redtoast.NXLua;
 
 import com.redtoast.neet.NeetComputersServer;
 import com.redtoast.neet.config.ConfigLoader;

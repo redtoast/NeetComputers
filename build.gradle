@@ -73,7 +73,7 @@ processResources {
 	inputs.property "fabricLoader", project.loader_version
 	inputs.property "minecraft", project.minecraft_version
 	inputs.property "buildTime", timestamp
-	inputs.property "luaVersion", project.yslua
+	inputs.property "luaVersion", project.nxlua
 
 	filesMatching("fabric.mod.json") {
 		expand "version": project.version,
@@ -85,7 +85,7 @@ processResources {
 	filesMatching("data/neetcomputers/builddat.json") {
 		expand "version": project.version,
 				"buildTime": timestamp,
-				"luaVersion": project.yslua
+				"luaVersion": project.nxlua
 	}
 }
 
