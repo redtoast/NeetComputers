@@ -62,11 +62,6 @@ public class ChipAPI implements API {
     }
 
     @Exposed
-    public boolean isViewed() {
-        return computer.isBeingViewed();
-    }
-
-    @Exposed
     public Table getMemory() {
         java.lang.Runtime runtime = java.lang.Runtime.getRuntime();
         Table table = new Table();
